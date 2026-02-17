@@ -28,6 +28,8 @@ router.get('/:postId/comments', async (req, res) => {
 router.post('/:postId/comments', protect, [
     body('content').trim().isLength({ min: 1, max: 500 }).withMessage('Comment must be 1-500 characters')
 ], async (req, res) => {
+    console.log(`📝 Adding comment to post ${req.params.postId} by user ${req.user._id}`);
+    console.log('Content:', req.body.content);
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
@@ -46,10 +48,17 @@ router.post('/:postId/comments', protect, [
             content: req.body.content
         });
 
+        // Initialize comments array if it doesn't exist
+        if (!post.comments) {
+            post.comments = [];
+        }
+
         // Add comment to post's comments array and update count
         post.comments.push(comment._id);
         post.commentCount = post.comments.length;
         await post.save();
+        console.log('✅ Comment added to post, new count:', post.commentCount);
+
 
         const populatedComment = await Comment.findById(comment._id)
             .populate('author', 'username avatar');

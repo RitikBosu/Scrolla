@@ -1,14 +1,18 @@
 import api from './api';
 
 export const postService = {
-    getPosts: async (filters = {}) => {
-        const params = new URLSearchParams(filters).toString();
-        const response = await api.get(`/posts?${params}`);
+    getPosts: async (params) => {
+        const response = await api.get('/posts', { params });
         return response.data;
     },
 
     getPost: async (id) => {
         const response = await api.get(`/posts/${id}`);
+        return response.data;
+    },
+
+    getUserPosts: async (userId) => {
+        const response = await api.get(`/posts/user/${userId}`);
         return response.data;
     },
 

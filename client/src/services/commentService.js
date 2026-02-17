@@ -2,12 +2,12 @@ import api from './api';
 
 export const commentService = {
     getComments: async (postId) => {
-        const response = await api.get(`/posts/${postId}/comments`);
+        const response = await api.get(`/comments/${postId}/comments`);
         return response.data;
     },
 
     addComment: async (postId, content) => {
-        const response = await api.post(`/posts/${postId}/comments`, { content });
+        const response = await api.post(`/comments/${postId}/comments`, { content });
         return response.data;
     },
 

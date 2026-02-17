@@ -1,99 +1,63 @@
 import express from 'express';
-import multer from 'multer';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import { v2 as cloudinary } from 'cloudinary';
 import { protect } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Get __dirname in ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, path.join(__dirname, '../uploads'));
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-    }
+// Configure Cloudinary
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-const fileFilter = (req, file, cb) => {
-    // Accept images only
-    if (file.mimetype.startsWith('image/')) {
-        cb(null, true);
-    } else {
-        cb(new Error('Only image files are allowed!'), false);
-    }
-};
-
-const upload = multer({
-    storage: storage,
-    fileFilter: fileFilter,
-    limits: {
-        fileSize: 5 * 1024 * 1024 // 5MB limit
-    }
-});
-
-// @route   POST /api/upload
-// @desc    Upload single image
+// @route   GET /api/upload/signature
+// @desc    Generate signature for direct Cloudinary upload
 // @access  Private
-router.post('/', protect, upload.single('image'), (req, res) => {
+router.get('/signature', protect, (req, res) => {
     try {
-        if (!req.file) {
-            return res.status(400).json({ message: 'No file uploaded' });
-        }
+        const timestamp = Math.round(new Date().getTime() / 1000);
+        const folder = 'scrolla';
 
-        const imageUrl = `/uploads/${req.file.filename}`;
-        res.status(200).json({
-            message: 'Image uploaded successfully',
-            imageUrl: imageUrl
+        // Generate signature
+        const signature = cloudinary.utils.api_sign_request(
+            {
+                timestamp: timestamp,
+                folder: folder
+            },
+            process.env.CLOUDINARY_API_SECRET
+        );
+
+        res.json({
+            signature: signature,
+            timestamp: timestamp,
+            cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+            apiKey: process.env.CLOUDINARY_API_KEY,
+            folder: folder
         });
     } catch (error) {
-        console.error('Upload error:', error);
-        res.status(500).json({ message: 'Error uploading image' });
+        console.error('Signature generation error:', error);
+        res.status(500).json({ message: 'Error generating upload signature' });
     }
 });
 
-// @route   POST /api/upload/multiple
-// @desc    Upload multiple images
+// @route   DELETE /api/upload/:publicId
+// @desc    Delete image from Cloudinary
 // @access  Private
-router.post('/multiple', protect, upload.array('images', 5), (req, res) => {
+router.delete('/:publicId', protect, async (req, res) => {
     try {
-        if (!req.files || req.files.length === 0) {
-            return res.status(400).json({ message: 'No files uploaded' });
-        }
+        const publicId = `scrolla/${req.params.publicId}`;
 
-        const imageUrls = req.files.map(file => `/uploads/${file.filename}`);
+        const result = await cloudinary.uploader.destroy(publicId);
+
         res.status(200).json({
-            message: 'Images uploaded successfully',
-            imageUrls: imageUrls
+            message: 'Image deleted successfully',
+            result: result
         });
     } catch (error) {
-        console.error('Upload error:', error);
-        res.status(500).json({ message: 'Error uploading images' });
+        console.error('Delete error:', error);
+        res.status(500).json({ message: 'Error deleting image' });
     }
-});
-
-// Error handling middleware for multer
-router.use((error, req, res, next) => {
-    if (error instanceof multer.MulterError) {
-        if (error.code === 'LIMIT_FILE_SIZE') {
-            return res.status(400).json({ message: 'File size too large. Maximum 5MB allowed.' });
-        }
-        if (error.code === 'LIMIT_FILE_COUNT') {
-            return res.status(400).json({ message: 'Too many files. Maximum 5 files allowed.' });
-        }
-    }
-
-    if (error) {
-        return res.status(400).json({ message: error.message });
-    }
-
-    next();
 });
 
 export default router;

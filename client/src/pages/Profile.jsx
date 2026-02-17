@@ -38,9 +38,8 @@ const Profile = () => {
 
     const fetchUserPosts = async () => {
         try {
-            // This would ideally be a dedicated endpoint, but we'll filter client-side for now
-            const data = await postService.getPosts({ limit: 50 });
-            setPosts(data.posts.filter(p => p.author._id === id));
+            const userPosts = await postService.getUserPosts(id);
+            setPosts(userPosts);
         } catch (error) {
             console.error('Error fetching posts:', error);
         }
@@ -190,8 +189,8 @@ const Profile = () => {
                         <button
                             onClick={() => setActiveTab('posts')}
                             className={`pb-4 font-semibold transition-colors ${activeTab === 'posts'
-                                    ? 'text-blue-600 border-b-2 border-blue-600'
-                                    : 'text-gray-500 hover:text-gray-700'
+                                ? 'text-blue-600 border-b-2 border-blue-600'
+                                : 'text-gray-500 hover:text-gray-700'
                                 }`}
                         >
                             Posts

@@ -3,9 +3,6 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import compression from 'compression';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { mkdirSync } from 'fs';
 
 // Import routes
 import authRoutes from './routes/authRoutes.js';
@@ -20,26 +17,12 @@ dotenv.config();
 
 const app = express();
 
-// Get __dirname in ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Create uploads directory if it doesn't exist
-const uploadsDir = path.join(__dirname, 'uploads');
-try {
-    mkdirSync(uploadsDir, { recursive: true });
-} catch (err) {
-    console.log('Uploads directory already exists');
-}
-
 // Middleware
 app.use(cors());
 app.use(compression());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// Serve static files from uploads directory
-app.use('/uploads', express.static(uploadsDir));
+// Reduced body size limit since Cloudinary handles files
+app.use(express.json({ limit: '5mb' }));
+app.use(express.urlencoded({ limit: '5mb', extended: true }));
 
 // MongoDB Connection
 const connectDB = async () => {
@@ -52,37 +35,28 @@ const connectDB = async () => {
     }
 };
 
+// Connect to database
 connectDB();
 
-// Routes
+// API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);
-app.use('/api/posts', commentRoutes);
+app.use('/api/comments', commentRoutes);
 app.use('/api/journeys', journeyRoutes);
 app.use('/api/upload', uploadRoutes);
 
-// Root route
-app.get('/', (req, res) => {
-    res.json({
-        message: 'Welcome to Scrolla API',
-        version: '2.0.0',
-        endpoints: {
-            auth: '/api/auth',
-            users: '/api/users',
-            posts: '/api/posts',
-            journeys: '/api/journeys',
-            upload: '/api/upload'
-        }
-    });
+// Health check
+app.get('/health', (req, res) => {
+    res.json({ status: 'ok', message: 'Server is running' });
 });
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-    console.error('Server error:', err.stack);
-    res.status(err.status || 500).json({
-        message: err.message || 'Internal server error',
-        error: process.env.NODE_ENV === 'development' ? err : {}
+    console.error(err.stack);
+    res.status(500).json({
+        message: 'Something went wrong!',
+        error: process.env.NODE_ENV === 'development' ? err.message : undefined
     });
 });
 

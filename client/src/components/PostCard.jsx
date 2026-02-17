@@ -20,7 +20,13 @@ const PostCard = ({ post, onUpdate, onDelete }) => {
     const [showMenu, setShowMenu] = useState(false);
 
     const shareUrl = `${window.location.origin}/posts/${post._id}`;
-    const isOwnPost = user?._id === post.author._id;
+    const isOwnPost = user?._id === post.author?._id;
+
+    // Safety check - if post.author is null, don't render
+    if (!post.author) {
+        console.error('Post author is null:', post);
+        return null;
+    }
 
     useEffect(() => {
         setLiked(post.likes?.includes(user?._id));
@@ -129,17 +135,18 @@ const PostCard = ({ post, onUpdate, onDelete }) => {
             {/* Content */}
             <p className="text-gray-700 mb-4 leading-relaxed">{post.content}</p>
 
-            {/* Images */}
+            {/* Images - Display Cloudinary URLs directly */}
             {post.images && post.images.length > 0 && (
                 <div className={`grid gap-2 mb-4 ${post.images.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
                     {post.images.map((image, index) => (
                         <img
                             key={index}
-                            src={image.startsWith('http') ? image : `http://localhost:5000${image}`}
+                            src={image}
                             alt={`Post image ${index + 1}`}
                             className="w-full rounded-lg object-cover max-h-80"
+                            loading="lazy"
                             onError={(e) => {
-                                console.error('Image failed to load:', image);
+                                console.error('Image failed to load');
                                 e.target.src = 'https://via.placeholder.com/400x300?text=Image+Not+Found';
                             }}
                         />

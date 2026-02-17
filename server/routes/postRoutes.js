@@ -46,6 +46,22 @@ router.get('/', async (req, res) => {
     }
 });
 
+// @route   GET /api/posts/user/:userId
+// @desc    Get posts by a specific user
+// @access  Public
+router.get('/user/:userId', async (req, res) => {
+    try {
+        const posts = await Post.find({ author: req.params.userId })
+            .populate('author', 'username avatar')
+            .sort({ createdAt: -1 });
+
+        res.json(posts);
+    } catch (error) {
+        console.error('Get user posts error:', error);
+        res.status(500).json({ message: 'Server error fetching user posts' });
+    }
+});
+
 // @route   GET /api/posts/:id
 // @desc    Get single post by ID
 // @access  Public

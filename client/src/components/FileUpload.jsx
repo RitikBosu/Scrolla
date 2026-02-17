@@ -5,6 +5,7 @@ import { uploadService } from '../services/uploadService';
 const FileUpload = ({ onUpload, maxFiles = 5, existingImages = [] }) => {
     const [images, setImages] = useState(existingImages);
     const [uploading, setUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
     const [error, setError] = useState('');
     const fileInputRef = useRef(null);
 
@@ -18,36 +19,44 @@ const FileUpload = ({ onUpload, maxFiles = 5, existingImages = [] }) => {
 
         setUploading(true);
         setError('');
+        setUploadProgress(0);
 
         try {
             const uploadedImages = [];
 
-            for (const file of files) {
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+
                 // Validate file type
                 if (!file.type.startsWith('image/')) {
                     setError(`${file.name} is not an image file`);
                     continue;
                 }
 
-                // Validate file size (5MB)
-                if (file.size > 5 * 1024 * 1024) {
-                    setError(`${file.name} is too large (max 5MB)`);
+                // Validate file size (10MB)
+                if (file.size > 10 * 1024 * 1024) {
+                    setError(`${file.name} is too large (max 10MB)`);
                     continue;
                 }
 
-                // Upload to server
+                // Upload directly to Cloudinary
                 const result = await uploadService.uploadImage(file);
                 uploadedImages.push(result.imageUrl);
+
+                // Update progress
+                setUploadProgress(Math.round(((i + 1) / files.length) * 100));
             }
 
             const newImages = [...images, ...uploadedImages];
             setImages(newImages);
             onUpload(newImages);
+            setUploadProgress(100);
         } catch (err) {
             console.error('Upload error:', err);
-            setError('Failed to upload images. Please try again.');
+            setError(err.message || 'Failed to upload images. Please try again.');
         } finally {
             setUploading(false);
+            setUploadProgress(0);
             if (fileInputRef.current) {
                 fileInputRef.current.value = '';
             }
@@ -77,16 +86,21 @@ const FileUpload = ({ onUpload, maxFiles = 5, existingImages = [] }) => {
                         onChange={handleFileSelect}
                         className="hidden"
                         id="file-upload"
+                        disabled={uploading}
                     />
                     <label
                         htmlFor="file-upload"
-                        className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+                        className={`cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                         <Upload className="w-5 h-5" />
-                        <span>{uploading ? 'Uploading...' : 'Upload Images'}</span>
+                        <span>
+                            {uploading
+                                ? `Uploading... ${uploadProgress}%`
+                                : 'Upload Images'}
+                        </span>
                     </label>
                     <p className="text-sm text-gray-500 mt-1">
-                        Max {maxFiles} images, 5MB each
+                        Max {maxFiles} images, 10MB each • Direct to Cloudinary
                     </p>
                 </div>
             )}
@@ -104,14 +118,20 @@ const FileUpload = ({ onUpload, maxFiles = 5, existingImages = [] }) => {
                     {images.map((img, index) => (
                         <div key={index} className="relative group">
                             <img
-                                src={img.startsWith('http') ? img : `http://localhost:5000${img}`}
+                                src={img}
                                 alt={`Upload ${index + 1}`}
                                 className="w-full h-32 object-cover rounded-lg"
+                                loading="lazy"
+                                onError={(e) => {
+                                    console.error('Image failed to load:', img);
+                                    e.target.src = 'https://via.placeholder.com/400x300?text=Image+Error';
+                                }}
                             />
                             <button
                                 type="button"
                                 onClick={() => handleRemoveImage(index)}
                                 className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                disabled={uploading}
                             >
                                 <X className="w-4 h-4" />
                             </button>
