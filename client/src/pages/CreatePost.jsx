@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { 
     MessageSquare, Bell, Home, Search, Map, Bookmark, User, Plus, X 
 } from 'lucide-react';
@@ -16,8 +17,8 @@ const MOOD_EMOJIS = {
     calm: '😌',
     excited: '🤩',
     grateful: '🙏',
-    anxious: '😰',
-    sad: '😢',
+    anxious: '�',
+    sad: '�',
     angry: '😤',
     reflective: '🤔',
     energetic: '⚡',
@@ -251,20 +252,25 @@ const CreatePost = () => {
                         <div className="cp-compose-footer">
                             <div></div>
                             <div className="cp-post-actions-row">
-                                <button 
+                                <motion.button 
                                     type="button" 
                                     className="cp-btn-cancel"
                                     onClick={() => navigate(-1)}
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
                                 >
                                     Discard
-                                </button>
-                                <button 
+                                </motion.button>
+                                <motion.button 
                                     type="submit" 
                                     className="cp-btn-post"
                                     disabled={loading || !formData.content.trim()}
+                                    whileHover={{ scale: 1.08 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    transition={{ type: 'spring', stiffness: 200 }}
                                 >
                                     {loading ? 'Saving...' : editPost ? 'Update Post' : 'Post'}
-                                </button>
+                                </motion.button>
                             </div>
                         </div>
                     </form>

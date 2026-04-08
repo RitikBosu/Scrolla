@@ -1,7 +1,6 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import Like from './models/Like.js';
-import Post from './models/Post.js'; // to update likeCount if needed
 
 dotenv.config();
 

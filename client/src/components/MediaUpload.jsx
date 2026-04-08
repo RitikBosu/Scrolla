@@ -14,7 +14,19 @@ const MediaUpload = ({ onImagesChange, onVideosChange, existingImages = [], exis
 
     // Editor state
     const [editingImageFile, setEditingImageFile] = useState(null);
+    const [editingImageQueue, setEditingImageQueue] = useState([]);
+    const [editingImageIndex, setEditingImageIndex] = useState(0);
+    const [imageEditsByIndex, setImageEditsByIndex] = useState({});
     const [editingVideoFile, setEditingVideoFile] = useState(null);
+    const [videoPendingEdits, setVideoPendingEdits] = useState({
+        trimStart: 0,
+        trimEnd: 0,
+        duration: 0,
+        muted: false,
+        filter: 'none',
+        aspectRatio: '16:9',
+        thumbnailTime: 0,
+    });
 
     const imageInputRef = useRef(null);
     const videoInputRef = useRef(null);
@@ -24,43 +36,64 @@ const MediaUpload = ({ onImagesChange, onVideosChange, existingImages = [], exis
         const files = Array.from(e.target.files);
         if (files.length === 0) return;
 
-        const totalMedia = images.length + videos.length + files.length;
+        const validImages = files.filter(file => file.type.startsWith('image/'));
+        if (validImages.length === 0) {
+            setError('Please select image file(s)');
+            return;
+        }
+
+        const totalMedia = images.length + videos.length + validImages.length;
         if (totalMedia > maxFiles) {
             setError(`Maximum ${maxFiles} media items allowed`);
             return;
         }
 
-        // Validate file
-        const file = files[0];
-        if (!file.type.startsWith('image/')) {
-            setError('Please select an image file');
-            return;
-        }
-        if (file.size > 10 * 1024 * 1024) {
-            setError('Image must be under 10MB');
+        const oversized = validImages.find(file => file.size > 10 * 1024 * 1024);
+        if (oversized) {
+            setError('Each image must be under 10MB');
             return;
         }
 
         setError('');
-        setEditingImageFile(file);
+        setEditingImageQueue(validImages);
+        setEditingImageIndex(0);
+        setEditingImageFile(validImages[0]);
+        setImageEditsByIndex(
+            Object.fromEntries(validImages.map((_, index) => [index, { filter: 'none', aspectRatio: 'original' }]))
+        );
 
         if (imageInputRef.current) imageInputRef.current.value = '';
     };
 
-    const handleImageEditorSave = async (edits) => {
-        // edits = { filter, aspectRatio }
+    const handleImageApply = (edits) => {
+        setImageEditsByIndex((prev) => ({
+            ...prev,
+            [editingImageIndex]: edits,
+        }));
+    };
+
+    const handleImageUpload = async (editsFromEditor) => {
+        const currentFile = editingImageQueue[editingImageIndex] || editingImageFile;
+        if (!currentFile) return;
+
+        const appliedEdits = imageEditsByIndex[editingImageIndex] || editsFromEditor || { filter: 'none', aspectRatio: 'original' };
+
         setUploading(true);
-        setUploadStatus('Uploading image...');
+        setUploadStatus(
+            editingImageQueue.length > 1
+                ? `Uploading image ${editingImageIndex + 1} of ${editingImageQueue.length}...`
+                : 'Uploading image...'
+        );
         setUploadProgress(0);
 
         try {
-            const result = await uploadService.uploadImage(editingImageFile);
+            const result = await uploadService.uploadImage(currentFile);
 
             const newImage = {
                 url: result.url,
                 publicId: result.publicId,
-                filter: edits.filter,
-                aspectRatio: edits.aspectRatio,
+                filter: appliedEdits.filter,
+                aspectRatio: appliedEdits.aspectRatio,
                 width: result.width
             };
 
@@ -68,6 +101,17 @@ const MediaUpload = ({ onImagesChange, onVideosChange, existingImages = [], exis
             setImages(newImages);
             onImagesChange(newImages);
             setUploadProgress(100);
+
+            const nextIndex = editingImageIndex + 1;
+            if (nextIndex < editingImageQueue.length) {
+                setEditingImageIndex(nextIndex);
+                setEditingImageFile(editingImageQueue[nextIndex]);
+            } else {
+                setEditingImageQueue([]);
+                setEditingImageIndex(0);
+                setEditingImageFile(null);
+                setImageEditsByIndex({});
+            }
         } catch (err) {
             console.error('Upload error:', err);
             setError(err.message || 'Failed to upload image');
@@ -75,12 +119,28 @@ const MediaUpload = ({ onImagesChange, onVideosChange, existingImages = [], exis
             setUploading(false);
             setUploadStatus('');
             setUploadProgress(0);
-            setEditingImageFile(null);
         }
     };
 
     const handleImageEditorCancel = () => {
         setEditingImageFile(null);
+        setEditingImageQueue([]);
+        setEditingImageIndex(0);
+        setImageEditsByIndex({});
+    };
+
+    const handlePreviousImage = () => {
+        if (editingImageIndex <= 0) return;
+        const nextIndex = editingImageIndex - 1;
+        setEditingImageIndex(nextIndex);
+        setEditingImageFile(editingImageQueue[nextIndex]);
+    };
+
+    const handleNextImage = () => {
+        if (editingImageIndex >= editingImageQueue.length - 1) return;
+        const nextIndex = editingImageIndex + 1;
+        setEditingImageIndex(nextIndex);
+        setEditingImageFile(editingImageQueue[nextIndex]);
     };
 
     // ─── Video Flow ───
@@ -106,40 +166,49 @@ const MediaUpload = ({ onImagesChange, onVideosChange, existingImages = [], exis
 
         setError('');
         setEditingVideoFile(file);
+        setVideoPendingEdits({
+            trimStart: 0,
+            trimEnd: 0,
+            duration: 0,
+            muted: false,
+            filter: 'none',
+            aspectRatio: '16:9',
+            thumbnailTime: 0,
+        });
 
         if (videoInputRef.current) videoInputRef.current.value = '';
     };
 
-    const handleVideoEditorSave = async (edits) => {
+    const handleVideoApply = (edits) => {
+        setVideoPendingEdits(edits);
+    };
+
+    const handleVideoUpload = async (editsFromEditor) => {
         // edits = { trimStart, trimEnd, duration, muted, filter, aspectRatio, thumbnailTime }
+        const appliedEdits = videoPendingEdits?.duration ? videoPendingEdits : editsFromEditor;
+
+        if (!appliedEdits) return;
+
         setUploading(true);
         setUploadStatus('Uploading video...');
         setUploadProgress(0);
 
         try {
-            // Pass trim options so Cloudinary trims during upload
-            const trimOptions = {
-                trimStart: edits.trimStart,
-                trimEnd: edits.trimEnd,
-                muted: edits.muted
-            };
-
             const result = await uploadService.uploadVideo(
                 editingVideoFile,
-                (progress) => setUploadProgress(progress),
-                trimOptions
+                (progress) => setUploadProgress(progress)
             );
 
             const newVideo = {
                 url: result.url,
                 publicId: result.publicId,
-                trimStart: 0,                                              // Already trimmed, starts at 0
-                trimEnd: result.duration || (edits.trimEnd - edits.trimStart), // Cloudinary returns trimmed duration
-                duration: result.duration || (edits.trimEnd - edits.trimStart),
-                muted: edits.muted,
-                aspectRatio: edits.aspectRatio,
-                thumbnailTime: Math.max(0, edits.thumbnailTime - edits.trimStart), // Offset relative to new start
-                filter: edits.filter
+                trimStart: appliedEdits.trimStart,
+                trimEnd: appliedEdits.trimEnd,
+                duration: appliedEdits.duration,
+                muted: appliedEdits.muted,
+                aspectRatio: appliedEdits.aspectRatio,
+                thumbnailTime: appliedEdits.thumbnailTime,
+                filter: appliedEdits.filter
             };
 
             const newVideos = [...videos, newVideo];
@@ -154,11 +223,29 @@ const MediaUpload = ({ onImagesChange, onVideosChange, existingImages = [], exis
             setUploadStatus('');
             setUploadProgress(0);
             setEditingVideoFile(null);
+            setVideoPendingEdits({
+                trimStart: 0,
+                trimEnd: 0,
+                duration: 0,
+                muted: false,
+                filter: 'none',
+                aspectRatio: '16:9',
+                thumbnailTime: 0,
+            });
         }
     };
 
     const handleVideoEditorCancel = () => {
         setEditingVideoFile(null);
+        setVideoPendingEdits({
+            trimStart: 0,
+            trimEnd: 0,
+            duration: 0,
+            muted: false,
+            filter: 'none',
+            aspectRatio: '16:9',
+            thumbnailTime: 0,
+        });
     };
 
     // ─── Remove handlers ───
@@ -172,13 +259,6 @@ const MediaUpload = ({ onImagesChange, onVideosChange, existingImages = [], exis
         const newVideos = videos.filter((_, i) => i !== index);
         setVideos(newVideos);
         onVideosChange(newVideos);
-    };
-
-    // ─── Cloudinary URL builder for display ───
-    const getImageDisplayUrl = (img) => {
-        if (!img.url) return img; // backward compat: plain URL string
-        // For preview, just show the base URL — filters applied via CSS
-        return img.url;
     };
 
     const getImageCssFilter = (img) => {
@@ -209,8 +289,26 @@ const MediaUpload = ({ onImagesChange, onVideosChange, existingImages = [], exis
                 <div className="mb-4">
                     <ImageEditor
                         file={editingImageFile}
-                        onSave={handleImageEditorSave}
+                        queueFiles={editingImageQueue}
+                        initialEdits={imageEditsByIndex[editingImageIndex] || { filter: 'none', aspectRatio: 'original' }}
+                        onApply={handleImageApply}
+                        onUpload={handleImageUpload}
                         onCancel={handleImageEditorCancel}
+                        queueLength={editingImageQueue.length}
+                        currentIndex={editingImageIndex}
+                        onPrevious={handlePreviousImage}
+                        onNext={handleNextImage}
+                        appliedImageIndices={Object.keys(imageEditsByIndex)
+                            .filter(key => {
+                                const edits = imageEditsByIndex[key];
+                                return edits?.filter !== 'none' || edits?.aspectRatio !== 'original';
+                            })
+                            .map(Number)}
+                        onSelectImageIndex={(index) => {
+                            if (index < 0 || index >= editingImageQueue.length) return;
+                            setEditingImageIndex(index);
+                            setEditingImageFile(editingImageQueue[index]);
+                        }}
                     />
                 </div>
             )}
@@ -220,7 +318,9 @@ const MediaUpload = ({ onImagesChange, onVideosChange, existingImages = [], exis
                 <div className="mb-4">
                     <VideoEditor
                         file={editingVideoFile}
-                        onSave={handleVideoEditorSave}
+                        initialEdits={videoPendingEdits}
+                        onApply={handleVideoApply}
+                        onUpload={handleVideoUpload}
                         onCancel={handleVideoEditorCancel}
                     />
                 </div>
@@ -251,6 +351,7 @@ const MediaUpload = ({ onImagesChange, onVideosChange, existingImages = [], exis
                         type="file"
                         accept="image/*"
                         onChange={handleImageSelect}
+                        multiple
                         className="hidden"
                         id="image-upload"
                         disabled={uploading}

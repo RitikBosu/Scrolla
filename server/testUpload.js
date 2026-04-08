@@ -1,8 +1,6 @@
 // Quick test to upload a sample image to Cloudinary
 import { v2 as cloudinary } from 'cloudinary';
 import dotenv from 'dotenv';
-import https from 'https';
-import fs from 'fs';
 
 dotenv.config();
 

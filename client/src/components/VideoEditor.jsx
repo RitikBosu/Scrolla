@@ -19,7 +19,7 @@ const ASPECT_RATIOS = [
     { id: '4:3', label: '4:3', icon: '▭' },
 ];
 
-const VideoEditor = ({ file, onSave, onCancel }) => {
+const VideoEditor = ({ file, initialEdits, onApply, onUpload, onCancel }) => {
     const videoRef = useRef(null);
     const timelineRef = useRef(null);
     const [videoUrl, setVideoUrl] = useState('');
@@ -33,6 +33,7 @@ const VideoEditor = ({ file, onSave, onCancel }) => {
     const [aspectRatio, setAspectRatio] = useState('16:9');
     const [thumbnailTime, setThumbnailTime] = useState(0);
     const [dragging, setDragging] = useState(null); // 'start', 'end', or null
+    const [showAppliedMessage, setShowAppliedMessage] = useState(false);
 
     // Create object URL for preview
     useEffect(() => {
@@ -43,12 +44,22 @@ const VideoEditor = ({ file, onSave, onCancel }) => {
         }
     }, [file]);
 
+    useEffect(() => {
+        if (!initialEdits) return;
+        setTrimStart(initialEdits.trimStart || 0);
+        setTrimEnd(initialEdits.trimEnd || 0);
+        setMuted(initialEdits.muted || false);
+        setSelectedFilter(initialEdits.filter || 'none');
+        setAspectRatio(initialEdits.aspectRatio || '16:9');
+        setThumbnailTime(initialEdits.thumbnailTime || 0);
+    }, [initialEdits]);
+
     // Update duration when video loads
     const handleLoadedMetadata = () => {
         const video = videoRef.current;
         if (video) {
             setDuration(video.duration);
-            setTrimEnd(video.duration);
+            setTrimEnd((prev) => (prev > 0 ? Math.min(prev, video.duration) : video.duration));
         }
     };
 
@@ -155,8 +166,28 @@ const VideoEditor = ({ file, onSave, onCancel }) => {
     };
 
     // Save handler
+    const currentEdits = {
+        trimStart: Math.round(trimStart * 10) / 10,
+        trimEnd: Math.round(trimEnd * 10) / 10,
+        duration: Math.round(duration * 10) / 10,
+        muted,
+        filter: selectedFilter,
+        aspectRatio,
+        thumbnailTime: Math.round(thumbnailTime * 10) / 10,
+    };
+
+    const handleApply = () => {
+        onApply?.(currentEdits);
+        setShowAppliedMessage(true);
+        setTimeout(() => setShowAppliedMessage(false), 1500);
+    };
+
+    const handleUpload = () => {
+        onUpload?.(currentEdits);
+    };
+
     const handleSave = () => {
-        onSave({
+        onUpload?.({
             trimStart: Math.round(trimStart * 10) / 10,
             trimEnd: Math.round(trimEnd * 10) / 10,
             duration: Math.round(duration * 10) / 10,
@@ -321,14 +352,28 @@ const VideoEditor = ({ file, onSave, onCancel }) => {
                 </div>
             </div>
 
+            {/* Applied Message */}
+            {showAppliedMessage && (
+                <div className="px-4 py-2 bg-green-500 text-white text-sm font-medium text-center">
+                    ✓ Settings applied for this video!
+                </div>
+            )}
+
             {/* Action Buttons */}
             <div className="px-4 py-3 border-t border-gray-700 flex gap-3">
                 <button
                     type="button"
-                    onClick={handleSave}
+                    onClick={handleApply}
+                    className="px-6 bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-lg font-medium transition-colors"
+                >
+                    Apply
+                </button>
+                <button
+                    type="button"
+                    onClick={handleUpload}
                     className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2.5 rounded-lg font-medium transition-colors"
                 >
-                    Apply & Upload
+                    Upload
                 </button>
                 <button
                     type="button"

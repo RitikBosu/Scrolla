@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState } from 'react';
 
 const AppContext = createContext();
@@ -14,6 +15,13 @@ export const AppProvider = ({ children }) => {
     const [kidsMode, setKidsMode] = useState(false);
     const [journeyTime, setJourneyTime] = useState(null);
     const [journeyStartTime, setJourneyStartTime] = useState(null);
+    
+    // Session Timer State
+    const [sessionActive, setSessionActive] = useState(false);
+    const [sessionDuration, setSessionDuration] = useState(0); // in seconds
+    const [sessionJourneyName, setSessionJourneyName] = useState('');
+    const [sessionStartTime, setSessionStartTime] = useState(null);
+    const [showTimeUpModal, setShowTimeUpModal] = useState(false);
 
     const toggleKidsMode = () => {
         setKidsMode(!kidsMode);
@@ -29,13 +37,45 @@ export const AppProvider = ({ children }) => {
         setJourneyStartTime(null);
     };
 
+    // Session Timer Methods
+    const startSession = (durationMinutes, journeyName = '') => {
+        setSessionActive(true);
+        setSessionDuration(durationMinutes * 60); // convert to seconds
+        setSessionJourneyName(journeyName);
+        setSessionStartTime(Date.now());
+        setShowTimeUpModal(false);
+    };
+
+    const endSession = () => {
+        setSessionActive(false);
+        setSessionDuration(0);
+        setSessionJourneyName('');
+        setSessionStartTime(null);
+        setShowTimeUpModal(false);
+    };
+
+    const showTimeUpAlert = () => {
+        setSessionActive(false);
+        setShowTimeUpModal(true);
+    };
+
     const value = {
         kidsMode,
         toggleKidsMode,
         journeyTime,
         journeyStartTime,
         startJourney,
-        endJourney
+        endJourney,
+        // Session Timer
+        sessionActive,
+        sessionDuration,
+        sessionJourneyName,
+        sessionStartTime,
+        showTimeUpModal,
+        startSession,
+        endSession,
+        showTimeUpAlert,
+        setShowTimeUpModal,
     };
 
     return (

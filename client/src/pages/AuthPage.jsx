@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { FcGoogle } from 'react-icons/fc';
 import { useAuth } from '../context/AuthContext';
+import BrandLogo from '../components/BrandLogo';
 import toast from 'react-hot-toast';
 import './AuthPage.css';
 
@@ -81,7 +82,7 @@ const AuthPage = () => {
         setLoading(true);
 
         try {
-            const { confirmPassword, ...dataToSend } = registerData;
+            const { confirmPassword: _confirmPassword, ...dataToSend } = registerData;
             await register(dataToSend);  // AuthContext register handles API + sets user state
             navigate('/feed');
         } catch (err) {
@@ -103,7 +104,7 @@ const AuthPage = () => {
             <div className="auth-page">
                 {/* LEFT PANEL */}
                 <div className="auth-left-panel">
-                    <div className="auth-left-logo">Scrolla</div>
+                    <div className="auth-left-logo"><BrandLogo size="md" uppercase /></div>
 
                     <div className="auth-left-content">
                         <div className="auth-left-tagline">A space to scroll<br/>with intention.</div>

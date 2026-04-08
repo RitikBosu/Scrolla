@@ -1,26 +1,82 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { MessageSquare, Bell, Home, Search, Map, Bookmark, User, CheckCircle } from 'lucide-react';
+import { MessageSquare, Bell, Home, Search, Map, Bookmark, User, CheckCircle, Moon, Sun } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { useTheme } from '../context/ThemeContext';
 import PostCard from '../components/PostCard';
+import SkeletonPostCard from '../components/SkeletonPostCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { postService } from '../services/postService';
 import { userService } from '../services/userService';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
+import { useSessionTimer } from '../hooks/useSessionTimer';
+import { AlarmClockIcon } from '../components/AlarmClockIcon';
+import { TimeUpModal } from '../components/TimeUpModal';
 import { MOODS } from '../utils/constants';
 import './Feed.css';
 
 const Feed = () => {
     const navigate = useNavigate();
     const { user, logout } = useAuth();
-    const { kidsMode, toggleKidsMode, journeyTime, journeyStartTime, startJourney, endJourney } = useApp();
+    const { theme, toggleTheme } = useTheme();
+    const { 
+        kidsMode, 
+        toggleKidsMode, 
+        journeyTime, 
+        journeyStartTime, 
+        startJourney, 
+        endJourney,
+        // Session Timer states
+        sessionActive,
+        sessionDuration,
+        sessionJourneyName,
+        showTimeUpModal,
+        startSession,
+        endSession,
+        showTimeUpAlert,
+        setShowTimeUpModal
+    } = useApp();
+
+    const alarmRef = useRef(null);
+    const { timeRemaining, isActive, formatTime } = useSessionTimer(
+        sessionDuration,
+        showTimeUpAlert
+    );
 
     const [selectedMood, setSelectedMood] = useState('all');
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [timeRemaining, setTimeRemaining] = useState(null);
     const [journeyComplete, setJourneyComplete] = useState(false);
     const [activeTab, setActiveTab] = useState('foryou');
+
+    // Animation variants
+    const pageVariants = {
+        hidden: { opacity: 0 },
+        visible: {
+            opacity: 1,
+            transition: { duration: 0.6, ease: 'easeOut' }
+        }
+    };
+
+    const containerVariants = {
+        hidden: {},
+        visible: {
+            transition: {
+                staggerChildren: 0.1,
+                delayChildren: 0.2
+            }
+        }
+    };
+
+    const itemVariants = {
+        hidden: { opacity: 0, y: 20 },
+        visible: {
+            opacity: 1,
+            y: 0,
+            transition: { type: 'spring', stiffness: 300, damping: 30 }
+        }
+    };
 
     // Suggested users state
     const [suggestedUsers, setSuggestedUsers] = useState([]);
@@ -36,26 +92,12 @@ const Feed = () => {
         fetchPosts();
     }, [selectedMood, kidsMode, activeTab]);
 
+    // Sync session timer with AppContext
     useEffect(() => {
-        if (journeyTime && journeyStartTime) {
-            const endTime = journeyStartTime + journeyTime * 60000;
-
-            const timer = setInterval(() => {
-                const now = Date.now();
-                const remaining = Math.max(0, endTime - now);
-                setTimeRemaining(remaining);
-
-                if (remaining === 0) {
-                    handleJourneyEnd();
-                    clearInterval(timer);
-                }
-            }, 1000);
-
-            return () => clearInterval(timer);
-        } else {
-            setTimeRemaining(null);
+        if (sessionActive && sessionDuration > 0) {
+            // Timer is active - no action needed, hook handles it
         }
-    }, [journeyTime, journeyStartTime]);
+    }, [sessionActive, sessionDuration]);
 
     const fetchFollowingList = async () => {
         if (!user?._id) return;
@@ -137,13 +179,6 @@ const Feed = () => {
         setJourneyComplete(false);
     };
 
-    const formatTime = (ms) => {
-        if (ms === null) return '';
-        const minutes = Math.floor(ms / 60000);
-        const seconds = Math.floor((ms % 60000) / 1000);
-        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-    };
-
     const handleLogout = () => {
         logout();
         navigate('/login');
@@ -178,7 +213,12 @@ const Feed = () => {
     }
 
     return (
-        <div className="feed-page-wrapper">
+        <motion.div 
+            className="feed-page-wrapper"
+            initial="hidden"
+            animate="visible"
+            variants={pageVariants}
+        >
             {/* NAV */}
             <nav className="feed-nav">
                 <Link to="/feed" className="feed-logo">Scrolla</Link>
@@ -186,9 +226,45 @@ const Feed = () => {
                     <button className="feed-icon-btn" title="Messages">
                         <MessageSquare className="w-[18px] h-[18px]" />
                     </button>
+
+                    {/* Session Timer Display */}
+                    {sessionActive && (
+                        <motion.div 
+                            className="flex items-center gap-2 px-3 py-2 border-2 border-cyber-neon-green rounded-none"
+                            animate={{
+                                boxShadow: [
+                                    '0 0 8px rgba(0, 255, 136, 0.2)',
+                                    '0 0 16px rgba(0, 255, 136, 0.4)',
+                                    '0 0 8px rgba(0, 255, 136, 0.2)',
+                                ]
+                            }}
+                            transition={{ duration: 1.5, repeat: Infinity }}
+                        >
+                            <AlarmClockIcon 
+                                ref={alarmRef}
+                                size={18}
+                                className="text-cyber-neon-green"
+                            />
+                            <span className="font-mono text-xs font-bold text-cyber-neon-green uppercase tracking-wider">
+                                {formatTime(timeRemaining)}
+                            </span>
+                        </motion.div>
+                    )}
+
                     <button className="feed-icon-btn" title="Notifications">
                         <Bell className="w-[18px] h-[18px]" />
                         <div className="feed-notif-dot"></div>
+                    </button>
+                    <button 
+                        className="feed-icon-btn" 
+                        title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                        onClick={toggleTheme}
+                    >
+                        {theme === 'dark' ? (
+                            <Sun className="w-[18px] h-[18px]" />
+                        ) : (
+                            <Moon className="w-[18px] h-[18px]" />
+                        )}
                     </button>
                     <div className="feed-nav-divider"></div>
                     <button 
@@ -201,7 +277,7 @@ const Feed = () => {
                             user?.username?.charAt(0).toUpperCase() || 'U'
                         )}
                     </button>
-                    <button onClick={handleLogout} style={{marginLeft:'8px', fontSize:'12px', color:'#b91c1c', background:'none', border:'none', cursor:'pointer'}}>Logout</button>
+                    <button onClick={handleLogout} style={{marginLeft:'8px', fontSize:'14px', color:'#b91c1c', background:'none', border:'none', cursor:'pointer'}}>Logout</button>
                 </div>
             </nav>
 
@@ -222,11 +298,6 @@ const Feed = () => {
                     </button>
                     <Link to="#" className="feed-nav-link">
                         <Map className="w-[16px] h-[16px]" /> Journeys
-                        {timeRemaining !== null && (
-                            <span style={{marginLeft:'auto', fontSize:'11px', fontWeight:'bold', color:'#6B7F6E', background:'#EDF0EE', padding:'2px 8px', borderRadius:'50px'}}>
-                                {formatTime(timeRemaining)}
-                            </span>
-                        )}
                     </Link>
                     <Link to="#" className="feed-nav-link">
                         <Bookmark className="w-[16px] h-[16px]" /> Saved
@@ -243,7 +314,7 @@ const Feed = () => {
                         className={`feed-mood-item ${selectedMood === 'all' ? 'active' : ''}`}
                         onClick={() => setSelectedMood('all')}
                     >
-                        <div className="feed-mood-dot"></div> All moods
+                        <div className="feed-mood-dot"></div> ✨ All moods
                     </button>
                     {MOODS.filter(m => m.id !== 'all').map(mood => (
                         <button 
@@ -251,7 +322,7 @@ const Feed = () => {
                             className={`feed-mood-item ${selectedMood === mood.id ? 'active' : ''}`}
                             onClick={() => setSelectedMood(mood.id)}
                         >
-                            <div className="feed-mood-dot"></div> {mood.label}
+                            <div className="feed-mood-dot"></div> {mood.emoji} {mood.label}
                         </button>
                     ))}
 
@@ -259,7 +330,7 @@ const Feed = () => {
 
                     <div className="feed-kids-row" onClick={toggleKidsMode}>
                         <div className={`feed-toggle ${kidsMode ? 'on' : ''}`}></div>
-                        <span style={{fontSize:'13px', color:'var(--feed-muted)'}}>Kids mode</span>
+                        <span style={{fontSize:'14px', color:'var(--feed-muted)'}}>Kids mode</span>
                     </div>
 
                     <div className="feed-sidebar-divider"></div>
@@ -316,9 +387,18 @@ const Feed = () => {
                     </div>
 
                     {/* Posts List */}
-                    <div className="feed-post-list">
+                    <motion.div 
+                        className="feed-post-list"
+                        variants={containerVariants}
+                        initial="hidden"
+                        animate="visible"
+                    >
                         {loading ? (
-                            <LoadingSpinner message="Loading posts..." />
+                            <>
+                                <SkeletonPostCard />
+                                <SkeletonPostCard />
+                                <SkeletonPostCard />
+                            </>
                         ) : posts.length === 0 ? (
                             <div style={{background:'white', border:'1px solid #E4E0DA', borderRadius:'12px', textAlign:'center', padding:'48px 16px'}}>
                                 <p style={{color:'#9A9590', marginBottom:'16px'}}>
@@ -331,7 +411,7 @@ const Feed = () => {
                                 {(activeTab === 'foryou' || activeTab === 'following') && (
                                     <button
                                         onClick={handleExploreClick}
-                                        style={{padding:'10px 20px', borderRadius:'8px', border:'none', background:'#6B7F6E', color:'white', fontSize:'13px', fontWeight:'500', cursor:'pointer'}}
+                                        style={{padding:'10px 20px', borderRadius:'8px', border:'none', background:'#6B7F6E', color:'white', fontSize:'14px', fontWeight:'500', cursor:'pointer'}}
                                     >
                                         Explore Posts
                                     </button>
@@ -339,50 +419,85 @@ const Feed = () => {
                             </div>
                         ) : (
                             posts.map((post) => (
-                                <PostCard 
-                                    key={post._id} 
-                                    post={post} 
-                                    onUpdate={fetchPosts} 
-                                    onDelete={fetchPosts} 
-                                    isFollowing={followingIds.has(post.author?._id)}
-                                />
+                                <motion.div
+                                    key={post._id}
+                                    variants={itemVariants}
+                                >
+                                    <PostCard 
+                                        post={post} 
+                                        onUpdate={fetchPosts} 
+                                        onDelete={fetchPosts} 
+                                        isFollowing={followingIds.has(post.author?._id)}
+                                    />
+                                </motion.div>
                             ))
                         )}
-                    </div>
+                    </motion.div>
                 </main>
 
                 {/* RIGHT PANEL */}
                 <aside className="feed-right">
-                    <div className="feed-panel-section">
+                    <motion.div 
+                        className="feed-panel-section"
+                        whileHover={{ scale: 1.02 }}
+                        transition={{ type: 'spring', stiffness: 300 }}
+                    >
                         <div className="feed-panel-heading">Active Journeys</div>
-                        <div className="feed-journey" onClick={() => startJourney(60)}>
+                        
+                        {/* Deep Focus - 30 min */}
+                        <motion.div 
+                            className="feed-journey cursor-pointer"
+                            onClick={() => !sessionActive && startSession(30, 'Deep Focus')}
+                            whileHover={!sessionActive ? { scale: 1.02 } : {}}
+                            whileTap={!sessionActive ? { scale: 0.98 } : {}}
+                        >
                             <div className="feed-journey-left">
-                                <div className="feed-journey-name">Deep Focus (60m)</div>
+                                <div className="feed-journey-name">Deep Focus (30m)</div>
                                 <div className="feed-prog"><div className="feed-prog-fill" style={{width: '0%'}}></div></div>
-                                <div className="feed-journey-count">Click to start</div>
+                                <div className="feed-journey-count">
+                                    {sessionActive && sessionJourneyName === 'Deep Focus' ? '⏱️ Active' : 'Click to start'}
+                                </div>
                             </div>
-                        </div>
-                        <div className="feed-journey" onClick={() => startJourney(30)}>
+                        </motion.div>
+
+                        {/* Digital Detox - 15 min */}
+                        <motion.div 
+                            className="feed-journey cursor-pointer"
+                            onClick={() => !sessionActive && startSession(15, 'Digital Detox')}
+                            whileHover={!sessionActive ? { scale: 1.02 } : {}}
+                            whileTap={!sessionActive ? { scale: 0.98 } : {}}
+                        >
                             <div className="feed-journey-left">
-                                <div className="feed-journey-name">Digital Detox (30m)</div>
+                                <div className="feed-journey-name">Digital Detox (15m)</div>
                                 <div className="feed-prog"><div className="feed-prog-fill" style={{width: '0%'}}></div></div>
-                                <div className="feed-journey-count">Click to start</div>
+                                <div className="feed-journey-count">
+                                    {sessionActive && sessionJourneyName === 'Digital Detox' ? '⏱️ Active' : 'Click to start'}
+                                </div>
                             </div>
-                        </div>
-                        <div className="feed-journey" onClick={() => startJourney(15)}>
+                        </motion.div>
+
+                        {/* Quick Break - 5 min */}
+                        <motion.div 
+                            className="feed-journey cursor-pointer"
+                            onClick={() => !sessionActive && startSession(5, 'Quick Break')}
+                            whileHover={!sessionActive ? { scale: 1.02 } : {}}
+                            whileTap={!sessionActive ? { scale: 0.98 } : {}}
+                        >
                             <div className="feed-journey-left">
-                                <div className="feed-journey-name">Quick Break (15m)</div>
+                                <div className="feed-journey-name">Quick Break (5m)</div>
                                 <div className="feed-prog"><div className="feed-prog-fill" style={{width: '0%'}}></div></div>
-                                <div className="feed-journey-count">Click to start</div>
+                                <div className="feed-journey-count">
+                                    {sessionActive && sessionJourneyName === 'Quick Break' ? '⏱️ Active' : 'Click to start'}
+                                </div>
                             </div>
-                        </div>
-                    </div>
+                        </motion.div>
+                    </motion.div>
 
                     {/* Suggested Users — real data */}
                     <div className="feed-panel-section">
                         <div className="feed-panel-heading">Suggested</div>
                         {suggestedUsers.length > 0 ? (
-                            <div style={{background:'var(--feed-card)', border:'1px solid var(--feed-border)', borderRadius:'8px', padding:'10px 12px'}}>
+                            <div style={{background:'rgba(15, 17, 21, 0.8)', border:'1px solid rgba(247, 147, 26, 0.15)', borderRadius:'12px', padding:'12px 14px'}}>
                                 {suggestedUsers.map(sUser => (
                                     <div className="feed-suggest" key={sUser._id}>
                                         <div 
@@ -410,7 +525,7 @@ const Feed = () => {
                                 ))}
                             </div>
                         ) : (
-                            <div style={{fontSize:'12px', color:'var(--feed-muted)', padding:'8px 0'}}>
+                            <div style={{fontSize:'0.9rem', color:'var(--defi-muted)', padding:'12px 0', textAlign:'center', fontStyle:'italic'}}>
                                 You're following everyone! 🎉
                             </div>
                         )}
@@ -436,7 +551,23 @@ const Feed = () => {
                     </div>
                 </aside>
             </div>
-        </div>
+
+            {/* Time Up Modal */}
+            <TimeUpModal 
+                isOpen={showTimeUpModal}
+                journeyName={sessionJourneyName}
+                timeSpent={formatTime(sessionDuration - timeRemaining)}
+                onContinue={() => {
+                    setShowTimeUpModal(false);
+                    endSession();
+                }}
+                onLogout={() => {
+                    setShowTimeUpModal(false);
+                    endSession();
+                    handleLogout();
+                }}
+            />
+        </motion.div>
     );
 };
 

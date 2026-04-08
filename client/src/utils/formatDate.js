@@ -6,7 +6,7 @@ export const formatDate = (date) => {
     try {
         const dateObj = new Date(date);
         return formatDistanceToNow(dateObj, { addSuffix: true });
-    } catch (error) {
+    } catch {
         return '';
     }
 };
@@ -17,7 +17,7 @@ export const formatFullDate = (date) => {
     try {
         const dateObj = new Date(date);
         return format(dateObj, 'PPP');
-    } catch (error) {
+    } catch {
         return '';
     }
 };

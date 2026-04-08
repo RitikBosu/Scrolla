@@ -8,6 +8,7 @@ import PostCard from '../components/PostCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { userService } from '../services/userService';
 import { postService } from '../services/postService';
+import { uploadService } from '../services/uploadService';
 import { useAuth } from '../context/AuthContext';
 import './Profile.css';
 
@@ -20,6 +21,10 @@ const Profile = () => {
     const [loading, setLoading] = useState(true);
     const [isFollowing, setIsFollowing] = useState(false);
     const [activeTab, setActiveTab] = useState('posts');
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [editForm, setEditForm] = useState({ username: '', bio: '', avatar: null });
+    const [uploadPreview, setUploadPreview] = useState(null);
+    const [isUploading, setIsUploading] = useState(false);
 
     const isOwnProfile = currentUser?._id === id;
 
@@ -73,9 +78,59 @@ const Profile = () => {
     };
 
     const handleEditProfile = () => {
-        const newBio = prompt('Enter new bio:', profile.bio);
-        if (newBio !== null) {
-            updateProfile({ bio: newBio });
+        setEditForm({ 
+            username: profile.username, 
+            bio: profile.bio || '',
+            avatar: null
+        });
+        setUploadPreview(profile.avatar);
+        setShowEditModal(true);
+    };
+
+    const handleAvatarUpload = async (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setIsUploading(true);
+            try {
+                // Show preview while uploading
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    setUploadPreview(reader.result);
+                };
+                reader.readAsDataURL(file);
+
+                // Upload to Cloudinary
+                const uploadResult = await uploadService.uploadImage(file);
+                setEditForm({ ...editForm, avatar: uploadResult.url });
+            } catch (error) {
+                console.error('Avatar upload error:', error);
+                alert('Failed to upload image. Please try again.');
+                setUploadPreview(null);
+            } finally {
+                setIsUploading(false);
+            }
+        }
+    };
+
+    const handleSaveProfile = async () => {
+        try {
+            if (!editForm.username.trim()) {
+                alert('Username cannot be empty');
+                return;
+            }
+            const updates = {
+                username: editForm.username,
+                bio: editForm.bio
+            };
+            if (editForm.avatar) {
+                updates.avatar = editForm.avatar;
+            }
+            await updateProfile(updates);
+            setShowEditModal(false);
+            alert('Profile updated successfully!');
+        } catch (error) {
+            console.error('Error saving profile:', error);
+            alert('Failed to update profile');
         }
     };
 
@@ -175,12 +230,14 @@ const Profile = () => {
                     {/* Profile Header */}
                     <div className="prof-profile-header">
                         <div className="prof-profile-top">
-                            <div className="prof-profile-avatar">
-                                {profile.avatar ? (
-                                    <img src={profile.avatar} alt={profile.username} />
-                                ) : (
-                                    profile.username?.charAt(0).toUpperCase()
-                                )}
+                            <div className="prof-avatar-wrapper">
+                                <div className="prof-profile-avatar">
+                                    {profile.avatar ? (
+                                        <img src={profile.avatar} alt={profile.username} />
+                                    ) : (
+                                        profile.username?.charAt(0).toUpperCase()
+                                    )}
+                                </div>
                             </div>
                             <div className="prof-profile-identity">
                                 <h1 className="prof-profile-name">{profile.username}</h1>
@@ -327,6 +384,101 @@ const Profile = () => {
                     </div>
                 </aside>
             </div>
+
+            {/* EDIT PROFILE MODAL */}
+            {showEditModal && (
+                <>
+                    {/* Backdrop */}
+                    <div 
+                        className="prof-modal-backdrop"
+                        onClick={() => setShowEditModal(false)}
+                    ></div>
+                    
+                    {/* Modal */}
+                    <div className="prof-edit-modal">
+                        <div className="prof-modal-header">
+                            <h2 className="prof-modal-title">Edit Profile</h2>
+                            <button 
+                                className="prof-modal-close"
+                                onClick={() => setShowEditModal(false)}
+                                aria-label="Close"
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        <div className="prof-modal-content">
+                            {/* Avatar Upload Section */}
+                            <div className="prof-modal-section">
+                                <label className="prof-modal-label">Profile Picture</label>
+                                <div className="prof-avatar-upload">
+                                    <div className="prof-avatar-preview">
+                                        {uploadPreview ? (
+                                            <img src={uploadPreview} alt="Preview" />
+                                        ) : (
+                                            <div className="prof-avatar-placeholder">
+                                                {editForm.username?.charAt(0).toUpperCase() || 'U'}
+                                            </div>
+                                        )}
+                                        {isUploading && <div className="prof-upload-loading">Uploading...</div>}
+                                    </div>
+                                    <input
+                                        type="file"
+                                        id="avatar-input"
+                                        className="prof-file-input"
+                                        accept="image/*"
+                                        onChange={handleAvatarUpload}
+                                        disabled={isUploading}
+                                    />
+                                    <label htmlFor="avatar-input" className={`prof-btn-upload ${isUploading ? 'uploading' : ''}`}>
+                                        {isUploading ? 'Uploading...' : 'Choose Image'}
+                                    </label>
+                                </div>
+                            </div>
+
+                            {/* Username Section */}
+                            <div className="prof-modal-section">
+                                <label className="prof-modal-label">Username</label>
+                                <input
+                                    type="text"
+                                    className="prof-modal-input"
+                                    value={editForm.username}
+                                    onChange={(e) => setEditForm({ ...editForm, username: e.target.value })}
+                                    placeholder="Enter your username"
+                                />
+                            </div>
+
+                            {/* Bio Section */}
+                            <div className="prof-modal-section">
+                                <label className="prof-modal-label">Bio</label>
+                                <textarea
+                                    className="prof-modal-textarea"
+                                    value={editForm.bio}
+                                    onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
+                                    placeholder="Tell us about yourself..."
+                                    rows="4"
+                                />
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="prof-modal-actions">
+                                <button 
+                                    className="prof-btn-cancel"
+                                    onClick={() => setShowEditModal(false)}
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    className="prof-btn-save"
+                                    onClick={handleSaveProfile}
+                                >
+                                    Save Changes
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </>
+            )}
         </div>
     );
 };

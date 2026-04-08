@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
-import { Heart, MessageCircle, Share2, MoreVertical, Volume2, VolumeX } from 'lucide-react';
+import { MessageCircle, Share2, MoreVertical, Volume2, VolumeX } from 'lucide-react';
 import { FaHeart, FaRegHeart } from 'react-icons/fa';
+import { motion } from 'framer-motion';
 import { FacebookShareButton, TwitterShareButton, WhatsappShareButton } from 'react-share';
 import MoodBadge from './MoodBadge';
 import ThreeDotMenu from './ThreeDotMenu';
 import CommentSection from './CommentSection';
 import { formatDate } from '../utils/formatDate';
-import { postService } from '../services/postService';
-import { userService } from '../services/userService';
+import { MOODS } from '../utils/constants';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useFollow } from '../hooks/useFollow';
@@ -49,6 +49,15 @@ const buildCloudinaryUrl = (baseUrl, transformations) => {
     const after = baseUrl.substring(uploadIndex + 8);
     const transformStr = transformations.filter(Boolean).join(',');
     return `${before}${transformStr}/${after}`;
+};
+
+// ─── Ripple animation handler ───
+const handleLikeWithRipple = (toggleLikeFn, e) => {
+    const ring = document.createElement('div');
+    ring.className = 'ripple-ring';
+    e.currentTarget.appendChild(ring);
+    setTimeout(() => ring.remove(), 600);
+    toggleLikeFn();
 };
 
 // ─── Autoplay Video Component ───
@@ -159,7 +168,6 @@ const AutoplayVideo = ({ src, poster, aspectRatio, filterLabel, trimStart = 0, t
         </div>
     );
 };
-
 const PostCard = ({ post, onUpdate, onDelete, isFollowing: isFollowingProp }) => {
     const { user } = useAuth();
     const navigate = useNavigate();
@@ -171,6 +179,13 @@ const PostCard = ({ post, onUpdate, onDelete, isFollowing: isFollowingProp }) =>
     const { isFollowing, toggleFollow: handleFollow, loading: followLoading } = useFollow(isFollowingProp, post?.author?._id);
     const { liked, likeCount, toggleLike: handleLike } = useLike(post?.isLiked, post?.likeCount, post?._id);
     const { handleSave, handleHide, handleReport, handleDelete } = usePostActions(post?._id, onUpdate, onDelete);
+
+    // Get mood color based on mood ID
+    const getMoodColor = () => {
+        if (!post?.mood) return '#E8A88B'; // default peach color
+        const moodObj = MOODS.find(m => m.id === post.mood);
+        return moodObj?.colorCode || '#E8A88B';
+    };
 
     const shareUrl = `${window.location.origin}/posts/${post?._id}`;
     const isOwnPost = user?._id === post?.author?._id;
@@ -252,7 +267,20 @@ const PostCard = ({ post, onUpdate, onDelete, isFollowing: isFollowingProp }) =>
     };
 
     return (
-        <div className="card animate-slide-up">
+        <motion.div 
+            className="post-card"
+            style={{
+                borderLeft: `4px solid ${getMoodColor()}`
+            }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            whileHover={{
+                scale: 1.02,
+                y: -4,
+                boxShadow: '0px 24px 48px rgba(0, 0, 0, 0.35), 0 0 32px rgba(51, 200, 232, 0.18)'
+            }}
+            transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+        >
             {/* Header */}
             <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
@@ -266,8 +294,8 @@ const PostCard = ({ post, onUpdate, onDelete, isFollowing: isFollowingProp }) =>
                             className="w-12 h-12 rounded-full object-cover ring-2 ring-blue-100"
                         />
                         <div>
-                            <h3 className="font-semibold text-gray-800">{post.author.username}</h3>
-                            <p className="text-sm text-gray-500">{formatDate(post.createdAt)}</p>
+                            <h3 className="post-author font-semibold">{post.author.username}</h3>
+                            <p className="post-time text-sm">{formatDate(post.createdAt)}</p>
                         </div>
                     </div>
 
@@ -279,10 +307,10 @@ const PostCard = ({ post, onUpdate, onDelete, isFollowing: isFollowingProp }) =>
                             style={{
                                 padding: '4px 14px',
                                 borderRadius: '6px',
-                                border: isFollowing ? '1px solid #E4E0DA' : '1px solid #6B7F6E',
-                                background: isFollowing ? '#FAFAF8' : '#6B7F6E',
-                                color: isFollowing ? '#9A9590' : 'white',
-                                fontSize: '12px',
+                                border: isFollowing ? '1px solid #8B7D73' : '1px solid #E8A88B',
+                                background: isFollowing ? '#3D3530' : '#E8A88B',
+                                color: isFollowing ? '#C4B5A0' : '#1A1410',
+                                fontSize: '14px',
                                 fontWeight: '500',
                                 cursor: followLoading ? 'not-allowed' : 'pointer',
                                 transition: 'all 0.15s',
@@ -300,9 +328,9 @@ const PostCard = ({ post, onUpdate, onDelete, isFollowing: isFollowingProp }) =>
                 <div className="relative">
                     <button
                         onClick={() => setShowMenu(!showMenu)}
-                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                        className="p-2 hover:bg-white/10 rounded-full transition-colors"
                     >
-                        <MoreVertical className="w-5 h-5 text-gray-600" />
+                        <MoreVertical className="w-5 h-5 text-gray-300" />
                     </button>
 
                     {showMenu && (
@@ -325,7 +353,7 @@ const PostCard = ({ post, onUpdate, onDelete, isFollowing: isFollowingProp }) =>
             </div>
 
             {/* Content */}
-            <p className="text-gray-700 mb-4 leading-relaxed">{post.content}</p>
+            <p className="post-content mb-4 leading-relaxed">{post.content}</p>
 
             {/* Images */}
             {post.images && post.images.length > 0 && (
@@ -345,7 +373,7 @@ const PostCard = ({ post, onUpdate, onDelete, isFollowing: isFollowingProp }) =>
             {post.hashtags && post.hashtags.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-4">
                     {post.hashtags.map((tag, index) => (
-                        <span key={index} className="text-blue-600 text-sm hover:underline cursor-pointer">
+                        <span key={index} className="post-tag text-sm hover:underline cursor-pointer">
                             #{tag}
                         </span>
                     ))}
@@ -353,22 +381,32 @@ const PostCard = ({ post, onUpdate, onDelete, isFollowing: isFollowingProp }) =>
             )}
 
             {/* Actions */}
-            <div className="flex items-center gap-6 pt-4 border-t border-gray-200">
-                <button
-                    onClick={handleLike}
-                    className="flex items-center gap-2 text-gray-600 hover:text-red-500 transition-colors group"
+            <div className="post-divider flex items-center gap-6 pt-4 border-t">
+                <motion.button
+                    onClick={(e) => handleLikeWithRipple(handleLike, e)}
+                    className="post-action-btn like-button flex items-center gap-2 hover:text-red-400 transition-colors group relative"
+                    whileTap={{ scale: 1.8 }}
+                    animate={{
+                        scale: liked ? [1, 1.3, 1] : 1,
+                    }}
+                    transition={{ duration: 0.4, type: 'spring' }}
                 >
                     {liked ? (
-                        <FaHeart className="w-5 h-5 text-red-500" />
+                        <motion.div
+                            animate={{ scale: [1, 1.2, 1] }}
+                            transition={{ duration: 0.3 }}
+                        >
+                            <FaHeart className="w-5 h-5 text-red-500" />
+                        </motion.div>
                     ) : (
                         <FaRegHeart className="w-5 h-5 group-hover:scale-110 transition-transform" />
                     )}
                     <span className="font-medium">{likeCount}</span>
-                </button>
+                </motion.button>
 
                 <button
                     onClick={() => setShowComments(!showComments)}
-                    className="flex items-center gap-2 text-gray-600 hover:text-blue-500 transition-colors"
+                    className="post-action-btn flex items-center gap-2 hover:text-blue-400 transition-colors"
                 >
                     <MessageCircle className="w-5 h-5" />
                     <span className="font-medium">{post.commentCount || 0}</span>
@@ -377,7 +415,7 @@ const PostCard = ({ post, onUpdate, onDelete, isFollowing: isFollowingProp }) =>
                 <div className="relative">
                     <button
                         onClick={() => setShowShareMenu(!showShareMenu)}
-                        className="flex items-center gap-2 text-gray-600 hover:text-green-500 transition-colors"
+                        className="post-action-btn flex items-center gap-2 hover:text-green-400 transition-colors"
                     >
                         <Share2 className="w-5 h-5" />
                         <span className="font-medium">Share</span>
@@ -401,11 +439,11 @@ const PostCard = ({ post, onUpdate, onDelete, isFollowing: isFollowingProp }) =>
 
             {/* Comments Section */}
             {showComments && (
-                <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="post-divider mt-4 pt-4 border-t">
                     <CommentSection postId={post._id} />
                 </div>
             )}
-        </div>
+        </motion.div>
     );
 };
 

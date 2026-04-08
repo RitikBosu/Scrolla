@@ -30,7 +30,9 @@ const migrateUserPostRelations = async () => {
                         { $setOnInsert: { user: user._id, post: postId } },
                         { upsert: true }
                     );
-                } catch (err) {}
+                } catch {
+                    // Skip malformed legacy relation entries.
+                }
             }
             savedMigrated++;
         }
@@ -43,7 +45,9 @@ const migrateUserPostRelations = async () => {
                         { $setOnInsert: { user: user._id, post: postId } },
                         { upsert: true }
                     );
-                } catch (err) {}
+                } catch {
+                    // Skip malformed legacy relation entries.
+                }
             }
             hiddenMigrated++;
         }
@@ -56,7 +60,9 @@ const migrateUserPostRelations = async () => {
                         { $setOnInsert: { user: user._id, post: postId } },
                         { upsert: true }
                     );
-                } catch (err) {}
+                } catch {
+                    // Skip malformed legacy relation entries.
+                }
             }
             reportedMigrated++;
         }
