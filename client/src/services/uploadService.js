@@ -50,12 +50,21 @@ export const uploadService = {
         }
     },
 
-    // Upload video directly to Cloudinary
-    uploadVideo: async (file, onProgress) => {
+    // Upload video directly to Cloudinary (with optional server-side trim)
+    uploadVideo: async (file, onProgress, trimOptions = {}) => {
         try {
             console.log('📹 Getting video signature...');
-            const signatureData = await uploadService.getVideoSignature();
-            console.log('📹 Got signature:', { cloudName: signatureData.cloudName, folder: signatureData.folder });
+
+            // Build query string with trim params for signature
+            const queryParams = new URLSearchParams();
+            if (trimOptions.trimStart > 0) queryParams.set('trimStart', trimOptions.trimStart);
+            if (trimOptions.trimEnd) queryParams.set('trimEnd', trimOptions.trimEnd);
+            if (trimOptions.muted) queryParams.set('muted', 'true');
+            const queryStr = queryParams.toString();
+            const signatureUrl = `/upload/video-signature${queryStr ? `?${queryStr}` : ''}`;
+
+            const signatureData = await api.get(signatureUrl).then(r => r.data);
+            console.log('📹 Got signature:', { cloudName: signatureData.cloudName, folder: signatureData.folder, transformation: signatureData.transformation });
 
             const formData = new FormData();
             formData.append('file', file);
@@ -63,6 +72,11 @@ export const uploadService = {
             formData.append('timestamp', signatureData.timestamp);
             formData.append('api_key', signatureData.apiKey);
             formData.append('folder', signatureData.folder);
+
+            // Include transformation in upload for server-side trim
+            if (signatureData.transformation) {
+                formData.append('transformation', signatureData.transformation);
+            }
 
             const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${signatureData.cloudName}/video/upload`;
             console.log('📹 Uploading video to:', cloudinaryUrl);

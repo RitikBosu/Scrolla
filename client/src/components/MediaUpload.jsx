@@ -117,20 +117,28 @@ const MediaUpload = ({ onImagesChange, onVideosChange, existingImages = [], exis
         setUploadProgress(0);
 
         try {
+            // Pass trim options so Cloudinary trims during upload
+            const trimOptions = {
+                trimStart: edits.trimStart,
+                trimEnd: edits.trimEnd,
+                muted: edits.muted
+            };
+
             const result = await uploadService.uploadVideo(
                 editingVideoFile,
-                (progress) => setUploadProgress(progress)
+                (progress) => setUploadProgress(progress),
+                trimOptions
             );
 
             const newVideo = {
                 url: result.url,
                 publicId: result.publicId,
-                trimStart: edits.trimStart,
-                trimEnd: edits.trimEnd,
-                duration: edits.duration,
+                trimStart: 0,                                              // Already trimmed, starts at 0
+                trimEnd: result.duration || (edits.trimEnd - edits.trimStart), // Cloudinary returns trimmed duration
+                duration: result.duration || (edits.trimEnd - edits.trimStart),
                 muted: edits.muted,
                 aspectRatio: edits.aspectRatio,
-                thumbnailTime: edits.thumbnailTime,
+                thumbnailTime: Math.max(0, edits.thumbnailTime - edits.trimStart), // Offset relative to new start
                 filter: edits.filter
             };
 

@@ -52,7 +52,7 @@ const buildCloudinaryUrl = (baseUrl, transformations) => {
 };
 
 // ─── Autoplay Video Component ───
-const AutoplayVideo = ({ src, poster, aspectRatio, filterLabel }) => {
+const AutoplayVideo = ({ src, poster, aspectRatio, filterLabel, trimStart = 0, trimEnd }) => {
     const videoRef = useRef(null);
     const containerRef = useRef(null);
     const [isMuted, setIsMuted] = useState(true);
@@ -62,10 +62,29 @@ const AutoplayVideo = ({ src, poster, aspectRatio, filterLabel }) => {
         const container = containerRef.current;
         if (!video || !container) return;
 
+        // Set initial playback position to trim start
+        const handleLoaded = () => {
+            if (trimStart > 0) {
+                video.currentTime = trimStart;
+            }
+        };
+        video.addEventListener('loadedmetadata', handleLoaded);
+
+        // Enforce trim boundaries during playback
+        const handleTimeUpdate = () => {
+            if (trimEnd && video.currentTime >= trimEnd) {
+                video.currentTime = trimStart;
+            }
+        };
+        video.addEventListener('timeupdate', handleTimeUpdate);
+
         const observer = new IntersectionObserver(
             (entries) => {
                 entries.forEach((entry) => {
                     if (entry.isIntersecting) {
+                        if (trimStart > 0 && video.currentTime < trimStart) {
+                            video.currentTime = trimStart;
+                        }
                         video.play().catch(() => {});
                     } else {
                         video.pause();
@@ -80,8 +99,10 @@ const AutoplayVideo = ({ src, poster, aspectRatio, filterLabel }) => {
         return () => {
             observer.disconnect();
             video.pause();
+            video.removeEventListener('loadedmetadata', handleLoaded);
+            video.removeEventListener('timeupdate', handleTimeUpdate);
         };
-    }, [src]);
+    }, [src, trimStart, trimEnd]);
 
     const toggleMute = (e) => {
         e.stopPropagation();
@@ -224,6 +245,8 @@ const PostCard = ({ post, onUpdate, onDelete, isFollowing: isFollowingProp }) =>
                 poster={thumbUrl}
                 aspectRatio={video.aspectRatio || '16:9'}
                 filterLabel={video.filter && video.filter !== 'none' ? video.filter : null}
+                trimStart={video.trimStart || 0}
+                trimEnd={video.trimEnd}
             />
         );
     };

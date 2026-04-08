@@ -38,15 +38,27 @@ router.get('/signature', protect, (req, res) => {
 });
 
 // @route   GET /api/upload/video-signature
-// @desc    Generate signature for direct Cloudinary video upload
+// @desc    Generate signature for direct Cloudinary video upload (with optional trim)
 // @access  Private
 router.get('/video-signature', protect, (req, res) => {
     try {
         const timestamp = Math.round(new Date().getTime() / 1000);
         const folder = 'scrolla/videos';
 
+        // Build incoming transformation for trim if provided
+        const { trimStart, trimEnd, muted } = req.query;
+        const transformParts = [];
+        if (trimStart && Number(trimStart) > 0) transformParts.push(`so_${trimStart}`);
+        if (trimEnd) transformParts.push(`eo_${trimEnd}`);
+        if (muted === 'true') transformParts.push('ac_none');
+        const transformation = transformParts.length > 0 ? transformParts.join(',') : undefined;
+
+        // Build params to sign (Cloudinary requires ALL upload params to be signed)
+        const paramsToSign = { timestamp, folder };
+        if (transformation) paramsToSign.transformation = transformation;
+
         const signature = cloudinary.utils.api_sign_request(
-            { timestamp, folder },
+            paramsToSign,
             process.env.CLOUDINARY_API_SECRET
         );
 
@@ -55,7 +67,8 @@ router.get('/video-signature', protect, (req, res) => {
             timestamp,
             cloudName: process.env.CLOUDINARY_CLOUD_NAME,
             apiKey: process.env.CLOUDINARY_API_KEY,
-            folder
+            folder,
+            transformation // undefined if no trim, string if trim specified
         });
     } catch (error) {
         console.error('Video signature generation error:', error);
