@@ -54,6 +54,12 @@ const postSchema = new mongoose.Schema({
     commentCount: {
         type: Number,
         default: 0
+    },
+    // Optional: post tagged to a shared Journey
+    journey: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'SharedJourney',
+        default: null
     }
 }, {
     timestamps: true
@@ -63,7 +69,8 @@ const postSchema = new mongoose.Schema({
 postSchema.index({ mood: 1, kidSafe: 1 });
 postSchema.index({ hashtags: 1 });
 postSchema.index({ createdAt: -1 });
-postSchema.index({ author: 1, createdAt: -1 }); // Profile posts query
+postSchema.index({ author: 1, createdAt: -1 });
+postSchema.index({ journey: 1, createdAt: -1 }); // Journey feed query
 
 const Post = mongoose.model('Post', postSchema);
 

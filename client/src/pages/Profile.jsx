@@ -2,8 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
     Edit, UserPlus, UserMinus, MessageSquare, Bell, 
-    Home, Search, Map, Bookmark, User, Sun, Moon, 
-    ChevronLeft, ChevronRight, Play, Heart, MessageCircle, Send, X
+    Home, Search, Map, Bookmark, User, CheckCircle, Loader
 } from 'lucide-react';
 import PostCard from '../components/PostCard';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -11,7 +10,7 @@ import BrandLogo from '../components/BrandLogo';
 import { userService } from '../services/userService';
 import { postService } from '../services/postService';
 import { uploadService } from '../services/uploadService';
-import { commentService } from '../services/commentService';
+import { sharedJourneyService } from '../services/sharedJourneyService';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import './Profile.css';
@@ -30,110 +29,30 @@ const Profile = () => {
     const [editForm, setEditForm] = useState({ username: '', bio: '', avatar: null });
     const [uploadPreview, setUploadPreview] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
-    
-    // Advanced modal state
-    const [expandedPost, setExpandedPost] = useState(null);
-    const [currentPostIndex, setCurrentPostIndex] = useState(null);
-    const [commentText, setCommentText] = useState('');
-    const [liked, setLiked] = useState(false);
-    const modalRef = useRef(null);
+    const [journeyHistory, setJourneyHistory] = useState([]);
+    const [journeyHistoryLoading, setJourneyHistoryLoading] = useState(false);
+    const [journeyHistoryLoaded, setJourneyHistoryLoaded] = useState(false);
 
     const isOwnProfile = currentUser?._id === id;
 
     useEffect(() => {
         fetchProfile();
         fetchUserPosts();
+        // Reset journey history when profile changes
+        setJourneyHistory([]);
+        setJourneyHistoryLoaded(false);
     }, [id]);
 
-    // Keyboard navigation for modal
+    // Lazy-load journey history only when tab is opened (own profile only)
     useEffect(() => {
-        const handleKeyDown = (e) => {
-            if (!expandedPost) return;
-            
-            if (e.key === 'Escape') {
-                closeModal();
-            } else if (e.key === 'ArrowLeft') {
-                navigateToPrevious();
-            } else if (e.key === 'ArrowRight') {
-                navigateToNext();
-            }
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [expandedPost, currentPostIndex]);
-
-    // Modal Navigation Functions
-    const openPostModal = (post) => {
-        const index = posts.findIndex(p => p._id === post._id);
-        setCurrentPostIndex(index);
-        setExpandedPost(post);
-        setLiked(post.isLiked || false);
-        setCommentText('');
-        document.body.style.overflow = 'hidden'; // Prevent background scroll
-    };
-
-    const closeModal = () => {
-        setExpandedPost(null);
-        setCurrentPostIndex(null);
-        setCommentText('');
-        document.body.style.overflow = 'auto'; // Re-enable background scroll
-    };
-
-    const navigateToNext = () => {
-        if (currentPostIndex !== null && currentPostIndex < posts.length - 1) {
-            const nextPost = posts[currentPostIndex + 1];
-            setExpandedPost(nextPost);
-            setCurrentPostIndex(currentPostIndex + 1);
-            setLiked(nextPost.isLiked || false);
-            setCommentText('');
+        if (activeTab === 'journeys' && isOwnProfile && !journeyHistoryLoaded) {
+            setJourneyHistoryLoading(true);
+            sharedJourneyService.getMine()
+                .then(data => { setJourneyHistory(data); setJourneyHistoryLoaded(true); })
+                .catch(() => {})
+                .finally(() => setJourneyHistoryLoading(false));
         }
-    };
-
-    const navigateToPrevious = () => {
-        if (currentPostIndex !== null && currentPostIndex > 0) {
-            const prevPost = posts[currentPostIndex - 1];
-            setExpandedPost(prevPost);
-            setCurrentPostIndex(currentPostIndex - 1);
-            setLiked(prevPost.isLiked || false);
-            setCommentText('');
-        }
-    };
-
-    // Handle adding a comment
-    const handleAddComment = async () => {
-        if (!commentText.trim() || !expandedPost) return;
-
-        try {
-            // Call comment service to add comment
-            const response = await commentService.addComment(expandedPost._id, commentText);
-
-            // Update expanded post with new comment
-            const newComment = response.comment || {
-                _id: Date.now(),
-                userId: { username: currentUser?.username, _id: currentUser?._id },
-                text: commentText,
-                createdAt: new Date()
-            };
-
-            const updatedPost = {
-                ...expandedPost,
-                comments: [...(expandedPost.comments || []), newComment]
-            };
-            setExpandedPost(updatedPost);
-
-            // Update posts array
-            const updatedPosts = posts.map(p => 
-                p._id === expandedPost._id ? updatedPost : p
-            );
-            setPosts(updatedPosts);
-
-            // Clear input
-            setCommentText('');
-        } catch (error) {
-            console.error('Error adding comment:', error);
-        }
-    };
+    }, [activeTab, isOwnProfile, journeyHistoryLoaded]);
 
     const fetchProfile = async () => {
         try {
@@ -315,16 +234,43 @@ const Profile = () => {
             </nav>
 
             <div className="prof-layout">
-                {/* PROFILE HEADER */}
-                <div className="prof-header">
-                    {/* Avatar + User Info */}
-                    <div className="prof-header-left">
-                        <div className="prof-profile-avatar">
-                            {profile.avatar ? (
-                                <img src={profile.avatar} alt={profile.username} />
-                            ) : (
-                                <div className="prof-avatar-placeholder">
-                                    {profile.username?.charAt(0).toUpperCase()}
+                {/* SIDEBAR */}
+                <aside className="prof-sidebar">
+                    <Link to="/feed" className="prof-nav-link">
+                        <Home className="w-[16px] h-[16px]" /> Home
+                    </Link>
+                    <Link to="/explore" className="prof-nav-link">
+                        <Search className="w-[16px] h-[16px]" /> Explore
+                    </Link>
+                    <Link to="/journeys" className="prof-nav-link">
+                        <Map className="w-[16px] h-[16px]" /> Journeys
+                    </Link>
+                    <Link to="/saved" className="prof-nav-link">
+                        <Bookmark className="w-[16px] h-[16px]" /> Saved
+                    </Link>
+                    <Link to={`/profile/${currentUser?._id}`} className={`prof-nav-link ${isOwnProfile ? 'active' : ''}`}>
+                        <User className="w-[16px] h-[16px]" /> Profile
+                    </Link>
+                    
+                    <div className="prof-sidebar-divider"></div>
+                    <div className="prof-sidebar-label">Mood</div>
+                    <div style={{ padding: '6px 14px', fontSize: '13px', color: 'var(--prof-muted)' }}>
+                        Feeling calm today
+                    </div>
+                </aside>
+
+                {/* MAIN */}
+                <main className="prof-main">
+                    {/* Profile Header */}
+                    <div className="prof-profile-header">
+                        <div className="prof-profile-top">
+                            <div className="prof-avatar-wrapper">
+                                <div className="prof-profile-avatar">
+                                    {profile.avatar ? (
+                                        <img src={profile.avatar} alt={profile.username} />
+                                    ) : (
+                                        profile.username?.charAt(0).toUpperCase()
+                                    )}
                                 </div>
                             )}
                             <div className="prof-online-indicator"></div>
@@ -571,73 +517,113 @@ const Profile = () => {
                             <X size={32} />
                         </button>
 
-                        {/* Left Section - Media */}
-                        <div className="prof-modal-media-section">
-                            {expandedPost.videos && expandedPost.videos.length > 0 ? (
-                                <video 
-                                    src={typeof expandedPost.videos[0] === 'object' ? expandedPost.videos[0].url : expandedPost.videos[0]} 
-                                    className="prof-modal-media"
-                                    controls
-                                    autoPlay
-                                    muted
-                                />
-                            ) : expandedPost.images && expandedPost.images.length > 0 ? (
-                                <img 
-                                    src={typeof expandedPost.images[0] === 'object' ? expandedPost.images[0].url : expandedPost.images[0]}
-                                    alt="Post"
-                                    className="prof-modal-media"
-                                />
-                            ) : (
-                                <img 
-                                    src={expandedPost.image || '/placeholder.jpg'}
-                                    alt="Post"
-                                    className="prof-modal-media"
-                                />
-                            )}
-                            
-                            {/* Post Counter - Below Media */}
-                            {currentPostIndex !== null && (
-                                <div className="prof-media-counter">
-                                    {currentPostIndex + 1} / {posts.length}
+                    {/* Posts tab */}
+                    {activeTab === 'posts' && (
+                        <div className="prof-posts-list">
+                            {posts.length === 0 ? (
+                                <div className="text-center py-12 border border-[#E4E0DA] bg-white rounded-xl">
+                                    <p className="text-[#9A9590]">
+                                        {isOwnProfile ? "You haven't posted anything yet" : "No posts yet"}
+                                    </p>
+                                    {isOwnProfile && (
+                                        <Link to="/create-post" className="prof-btn-primary mt-4 inline-block no-underline">
+                                            Create First Post
+                                        </Link>
+                                    )}
                                 </div>
+                            ) : (
+                                posts.map((post) => (
+                                    <PostCard
+                                        key={post._id}
+                                        post={post}
+                                        onUpdate={fetchUserPosts}
+                                        onDelete={(id) => setPosts(posts.filter(p => p._id !== id))}
+                                        isFollowing={isFollowing}
+                                    />
+                                ))
                             )}
                         </div>
+                    )}
 
-                        {/* Right Section - Caption, Likes, Comments */}
-                        <div className="prof-modal-content-section">
-                            {/* Header */}
-                            <div className="prof-modal-header-section">
-                                <div className="prof-modal-user-info">
-                                    <img 
-                                        src={profile?.avatar || '/avatar.png'} 
-                                        alt={profile?.username}
-                                        className="prof-modal-avatar"
-                                    />
-                                    <div className="prof-modal-user-details">
-                                        <p className="prof-modal-username">{profile?.username}</p>
-                                        <p className="prof-modal-timestamp">
-                                            {expandedPost.createdAt ? new Date(expandedPost.createdAt).toLocaleDateString() : ''}
-                                        </p>
-                                    </div>
+                    {/* Journeys history tab */}
+                    {activeTab === 'journeys' && (
+                        <div className="prof-journey-history">
+                            {!isOwnProfile ? (
+                                <div className="prof-journey-private">
+                                    <Map size={32} />
+                                    <p>Journey history is private.</p>
                                 </div>
-                                {!isOwnProfile && (
-                                    <button className="prof-follow-btn">
-                                        {isFollowing ? 'Following' : 'Follow'}
-                                    </button>
-                                )}
-                            </div>
+                            ) : journeyHistoryLoading ? (
+                                <div className="prof-journey-loading"><Loader size={20} className="spin" /> Loading history...</div>
+                            ) : journeyHistory.length === 0 ? (
+                                <div className="prof-journey-empty">
+                                    <div style={{ fontSize: '40px' }}>🗺️</div>
+                                    <p>No journey history yet.</p>
+                                    <Link to="/journeys" className="prof-btn-primary" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                        Browse Journeys
+                                    </Link>
+                                </div>
+                            ) : (
+                                journeyHistory.map((h, i) => (
+                                    <div key={i} className="prof-history-card">
+                                        <div className="prof-history-card-left">
+                                            <div className="prof-history-icon">
+                                                {h.myRole === 'creator' ? '⭐' : '🗺️'}
+                                            </div>
+                                            <div>
+                                                <Link to={`/journeys/${h._id}`} className="prof-history-title hover:underline cursor-pointer" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                                    {h.title}
+                                                </Link>
+                                                <div className="prof-history-prompt">"{h.prompt}"</div>
+                                                <div className="prof-history-meta">
+                                                    <span className={`prof-role-badge ${h.myRole}`}>{h.myRole === 'creator' ? 'Creator' : 'Member'}</span>
+                                                    <span>·</span>
+                                                    <span style={{ color: h.isActive ? '#16a34a' : 'inherit', fontWeight: h.isActive ? 600 : 400 }}>
+                                                        {h.isActive ? '🔴 Live' : 'Ended'}
+                                                    </span>
+                                                    <span>·</span>
+                                                    <span>{h.memberCount} members</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="prof-history-stats">
+                                            <div className="prof-history-stat">
+                                                <span className="prof-history-stat-num">{h.postCount}</span>
+                                                <span className="prof-history-stat-label">total posts</span>
+                                            </div>
+                                            {h.isActive ? (
+                                                <div style={{ width: '16px', height: '16px', borderRadius: '50%', background: '#16a34a', animation: 'pulse 2s infinite' }} />
+                                            ) : (
+                                                <CheckCircle size={16} style={{ color: '#6B7F6E' }} />
+                                            )}
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    )}
+                </main>
 
-                            {/* Caption */}
-                            <div className="prof-modal-caption">
-                                <p className="prof-caption-text">
-                                    {expandedPost.content || expandedPost.caption || expandedPost.thoughts || 'No caption'}
-                                </p>
+                {/* RIGHT SIDEBAR (Static presentation for template completeness) */}
+                <aside className="prof-right">
+                    <div className="prof-panel-section">
+                        <div className="prof-panel-heading">My Journeys</div>
+                        {isOwnProfile && journeyHistory.length > 0 ? (
+                            journeyHistory.slice(0, 3).map((h, i) => (
+                                <Link to={`/journeys/${h._id}`} key={i} className="prof-journey" style={{ textDecoration: 'none' }}>
+                                    <div className="prof-journey-left">
+                                        <div className="prof-journey-name">{h.title}</div>
+                                        <div className="prof-journey-count">{h.memberCount} members · {h.postCount} posts</div>
+                                    </div>
+                                    <span className="prof-journey-time">{h.isActive ? '🔴' : '✅'}</span>
+                                </Link>
+                            ))
+                        ) : (
+                            <div style={{ fontSize: '12px', color: 'var(--prof-muted)', padding: '8px 0' }}>
+                                {isOwnProfile ? <Link to="/journeys" style={{ color: '#6B7F6E', fontWeight: 600 }}>Browse & join journeys →</Link> : 'No journey history.'}
                             </div>
-
-                            {/* Likes */}
-                            <div className="prof-modal-likes">
-                                <strong>{expandedPost.likes?.length || expandedPost.likeCount || 0} likes</strong>
-                            </div>
+                        )}
+                    </div>
 
                             {/* Comments Section */}
                             <div className="prof-modal-comments">

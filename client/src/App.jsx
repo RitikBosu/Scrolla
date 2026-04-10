@@ -9,6 +9,8 @@ import AuthPage from './pages/AuthPage';
 import Feed from './pages/Feed';
 import CreatePost from './pages/CreatePost';
 import Profile from './pages/Profile';
+import JourneyDiscover from './pages/JourneyDiscover';
+import JourneyDetail from './pages/JourneyDetail';
 import './styles/defi-theme.css';
 
 function App() {
@@ -55,6 +57,23 @@ function App() {
                                 element={
                                     <ProtectedRoute>
                                         <Profile />
+                                    </ProtectedRoute>
+                                }
+                            />
+
+                            <Route
+                                path="/journeys"
+                                element={
+                                    <ProtectedRoute>
+                                        <JourneyDiscover />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/journeys/:id"
+                                element={
+                                    <ProtectedRoute>
+                                        <JourneyDetail />
                                     </ProtectedRoute>
                                 }
                             />

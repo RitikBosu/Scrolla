@@ -130,6 +130,16 @@ const AutoplayVideo = ({ src, poster, aspectRatio, filterLabel, trimStart = 0, t
         '4:3': '4/3',
     };
 
+    // Map aspect ratio → Tailwind aspect-ratio class (clamp 9:16 → 4:5 like Instagram)
+    const ratioClass = {
+        '16:9': 'aspect-video',
+        '1:1':  'aspect-square',
+        '9:16': 'aspect-[4/5]',
+        '4:3':  'aspect-[4/3]',
+        '3:4':  'aspect-[3/4]',
+        '4:5':  'aspect-[4/5]',
+    }[aspectRatio] || 'aspect-video';
+
     return (
             <div ref={containerRef} className="relative rounded-lg overflow-hidden" style={{ width: '100%', aspectRatio: aspectMap[aspectRatio] || '16/9', background: '#000' }}>
             <video
@@ -153,24 +163,49 @@ const AutoplayVideo = ({ src, poster, aspectRatio, filterLabel, trimStart = 0, t
             />
             <button
                 onClick={toggleMute}
-                style={{
-                    position: 'absolute', bottom: '12px', right: '12px',
-                    width: '36px', height: '36px', borderRadius: '50%',
-                    background: 'rgba(0,0,0,0.55)', color: 'white',
-                    border: 'none', cursor: 'pointer', backdropFilter: 'blur(4px)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10,
-                }}
+                className="absolute bottom-3 right-3 w-9 h-9 rounded-full bg-black/55 text-white border-none cursor-pointer backdrop-blur flex items-center justify-center z-10"
             >
                 {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
             </button>
             {filterLabel && (
-                <div className="absolute top-2 left-2 flex gap-1">
+                <div className="absolute top-2 left-2">
                     <span className="bg-black/60 text-white text-xs px-2 py-0.5 rounded">🎨 {filterLabel}</span>
                 </div>
             )}
         </div>
     );
 };
+// ─── SmartImage: auto-detects real ratio, clamps like Instagram ───
+// Min ratio: 1.91:1 (landscape cap) | Max ratio: 4:5 (portrait cap)
+const SmartImage = ({ url, cssFilter, roundedClass = 'rounded-xl' }) => {
+    const [paddingTop, setPaddingTop] = useState('100%'); // default square while loading
+
+    const handleLoad = (e) => {
+        const { naturalWidth, naturalHeight } = e.target;
+        if (!naturalWidth || !naturalHeight) return;
+        const ratio = naturalWidth / naturalHeight;
+
+        // Clamp: no wider than 1.91:1, no taller than 9:16
+        const clampedRatio = Math.min(Math.max(ratio, 9 / 16), 1.91);
+        // paddingTop drives the container height: (1/ratio)*100%
+        setPaddingTop(`${(1 / clampedRatio) * 100}%`);
+    };
+
+    return (
+        <div className={`relative w-full overflow-hidden ${roundedClass}`} style={{ paddingTop }}>
+            <img
+                src={url}
+                loading="lazy"
+                onLoad={handleLoad}
+                className="absolute inset-0 w-full h-full object-cover object-center block"
+                style={{ filter: cssFilter !== 'none' ? cssFilter : undefined }}
+                onError={(e) => { e.target.src = 'https://via.placeholder.com/400x300?text=Image+Not+Found'; }}
+            />
+        </div>
+    );
+};
+
+
 const PostCard = ({ post, onUpdate, onDelete, isFollowing: isFollowingProp }) => {
     const { user } = useAuth();
     const navigate = useNavigate();
@@ -373,7 +408,7 @@ const PostCard = ({ post, onUpdate, onDelete, isFollowing: isFollowingProp }) =>
 
             {/* Videos */}
             {post.videos && post.videos.length > 0 && (
-                <div className="space-y-3 mb-4">
+                <div className="flex flex-col gap-2 mb-3">
                     {post.videos.map((video, index) => renderVideo(video, index))}
                 </div>
             )}
