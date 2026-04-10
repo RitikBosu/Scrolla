@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
     Edit, UserPlus, UserMinus, MessageSquare, Bell, 
@@ -6,17 +6,20 @@ import {
 } from 'lucide-react';
 import PostCard from '../components/PostCard';
 import LoadingSpinner from '../components/LoadingSpinner';
+import BrandLogo from '../components/BrandLogo';
 import { userService } from '../services/userService';
 import { postService } from '../services/postService';
 import { uploadService } from '../services/uploadService';
 import { sharedJourneyService } from '../services/sharedJourneyService';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import './Profile.css';
 
 const Profile = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { user: currentUser, logout } = useAuth();
+    const { theme, toggleTheme } = useTheme();
     const [profile, setProfile] = useState(null);
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -194,12 +197,25 @@ const Profile = () => {
             
             {/* NAV */}
             <nav className="prof-nav">
-                <Link to="/feed" className="prof-logo">Scrolla</Link>
+                <Link to="/feed" className="prof-logo">
+                    <BrandLogo size="md" />
+                </Link>
                 <div className="prof-nav-end">
-                    <button className="prof-icon-btn"><MessageSquare className="w-[18px] h-[18px]" /></button>
-                    <button className="prof-icon-btn">
+                    <button className="prof-icon-btn" title="Messages"><MessageSquare className="w-[18px] h-[18px]" /></button>
+                    <button className="prof-icon-btn" title="Notifications">
                         <Bell className="w-[18px] h-[18px]" />
                         <div className="prof-notif-dot"></div>
+                    </button>
+                    <button 
+                        className="prof-icon-btn" 
+                        title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                        onClick={toggleTheme}
+                    >
+                        {theme === 'dark' ? (
+                            <Sun className="w-[18px] h-[18px]" />
+                        ) : (
+                            <Moon className="w-[18px] h-[18px]" />
+                        )}
                     </button>
                     <div className="prof-nav-divider"></div>
                     <button 
@@ -256,77 +272,250 @@ const Profile = () => {
                                         profile.username?.charAt(0).toUpperCase()
                                     )}
                                 </div>
+                            )}
+                            <div className="prof-online-indicator"></div>
+                        </div>
+
+                        <div className="prof-header-info">
+                            <h1 className="prof-username">{profile.username}</h1>
+                            <div className="prof-subtitle">
+                                <span className="prof-handle">@{profile.username.toLowerCase().replace(/\s+/g, '')}</span>
+                                <span className="prof-sep">•</span>
+                                <span className="prof-role">Scrolla creator</span>
                             </div>
-                            <div className="prof-profile-identity">
-                                <h1 className="prof-profile-name">{profile.username}</h1>
-                                <div className="prof-profile-handle">@{profile.username.toLowerCase().replace(/\s+/g, '')}</div>
-                                <div className="prof-profile-bio">{profile.bio || 'Sharing moments of mindful scrolling.'}</div>
-                                {profile.currentMood && (
-                                    <div className="prof-current-mood">😌 Currently: {profile.currentMood}</div>
-                                )}
+                            <p className="prof-bio">{profile.bio || 'Sharing moments of mindful scrolling.'} 🕊️ Building things that matter</p>
+                            <div className="prof-meta">
+                                <span>📍 Delhi, India</span>
+                                <span>📅 Joined March 2024</span>
+                                <a href="#scrolla" className="prof-link">🔗 scrolla.app</a>
                             </div>
+                        </div>
+                    </div>
+
+                    {/* Stats + Buttons */}
+                    <div className="prof-header-right">
+                        {/* Stats */}
+                        <div className="prof-stats">
+                            <div className="prof-stat">
+                                <div className="prof-stat-value">{posts.length}</div>
+                                <div className="prof-stat-label">POSTS</div>
+                            </div>
+                            <div className="prof-stat">
+                                <div className="prof-stat-value">{profile.followerCount || 0}</div>
+                                <div className="prof-stat-label">FOLLOWERS</div>
+                            </div>
+                            <div className="prof-stat">
+                                <div className="prof-stat-value">{profile.followingCount || 0}</div>
+                                <div className="prof-stat-label">FOLLOWING</div>
+                            </div>
+                            <div className="prof-stat">
+                                <div className="prof-stat-value">87%</div>
+                                <div className="prof-stat-label">AVG MOOD</div>
+                            </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="prof-header-actions">
+                            {isOwnProfile ? (
+                                <button onClick={handleEditProfile} className="prof-btn prof-btn-primary">
+                                    Edit Profile
+                                </button>
+                            ) : (
+                                <button 
+                                    onClick={handleFollow} 
+                                    className={isFollowing ? 'prof-btn prof-btn-secondary' : 'prof-btn prof-btn-primary'}
+                                >
+                                    {isFollowing ? 'Unfollow' : 'Follow'}
+                                </button>
+                            )}
+                            <button className="prof-btn prof-btn-secondary">Share</button>
+                            <button className="prof-btn prof-btn-icon">...</button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Interest Tags */}
+                <div className="prof-interests">
+                    <span className="prof-interest-tag">🏔️ Mountains</span>
+                    <span className="prof-interest-tag">💻 Tech</span>
+                    <span className="prof-interest-tag">🧘 Mindfulness</span>
+                    <span className="prof-interest-tag">🍵 Chai enjoyer</span>
+                    <span className="prof-interest-tag">🚗 Road trips</span>
+                </div>
+
+                {/* Highlights Section */}
+                <div className="prof-highlights">
+                    <h3 className="prof-highlights-title">HIGHLIGHTS</h3>
+                    <div className="prof-highlights-grid">
+                        <button className="prof-highlight-add">+</button>
+                        <div className="prof-highlight">
+                            <div className="prof-highlight-avatar">🏔️</div>
+                            <span>Mountains</span>
+                        </div>
+                        <div className="prof-highlight">
+                            <div className="prof-highlight-avatar">🧘</div>
+                            <span>Calm</span>
+                        </div>
+                        <div className="prof-highlight">
+                            <div className="prof-highlight-avatar">🚗</div>
+                            <span>Road trips</span>
+                        </div>
+                        <div className="prof-highlight">
+                            <div className="prof-highlight-avatar">☕</div>
+                            <span>Daily chat</span>
+                        </div>
+                        <div className="prof-highlight">
+                            <div className="prof-highlight-avatar">💻</div>
+                            <span>Tech</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Tabs */}
+                <div className="prof-tabs">
+                    <button 
+                        className={`prof-tab ${activeTab === 'posts' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('posts')}
+                    >
+                        Posts
+                    </button>
+                    <button 
+                        className={`prof-tab ${activeTab === 'saved' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('saved')}
+                    >
+                        Saved
+                    </button>
+                    <button 
+                        className={`prof-tab ${activeTab === 'journeys' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('journeys')}
+                    >
+                        Journeys
+                    </button>
+                    <button 
+                        className={`prof-tab ${activeTab === 'mood' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('mood')}
+                    >
+                        Mood Log
+                    </button>
+                </div>
+
+                {/* Posts Grid - Media Thumbnails */}
+                <div className="prof-posts-grid">
+                    {posts.length === 0 ? (
+                        <div className="prof-empty-state">
+                            <p className="prof-empty-text">
+                                {isOwnProfile ? "You haven't posted anything yet" : "No posts yet"}
+                            </p>
+                            {isOwnProfile && (
+                                <Link to="/create-post" className="prof-btn prof-btn-primary mt-4">
+                                    Create First Post
+                                </Link>
+                            )}
+                        </div>
+                    ) : (
+                        posts.map((post) => {
+                            // Get first image or video
+                            const hasImages = post.images && post.images.length > 0;
+                            const hasVideos = post.videos && post.videos.length > 0;
                             
-                            <div className="prof-profile-actions">
-                                {isOwnProfile ? (
-                                    <button onClick={handleEditProfile} className="prof-btn-secondary">
-                                        <Edit className="w-[15px] h-[15px]" /> Edit profile
-                                    </button>
-                                ) : (
-                                    <button 
-                                        onClick={handleFollow} 
-                                        className={isFollowing ? 'prof-btn-secondary' : 'prof-btn-primary'}
-                                    >
-                                        {isFollowing ? (
-                                            <><UserMinus className="w-[15px] h-[15px] inline mr-1" /> Unfollow</>
-                                        ) : (
-                                            <><UserPlus className="w-[15px] h-[15px] inline mr-1" /> Follow</>
-                                        )}
-                                    </button>
-                                )}
-                            </div>
-                        </div>
+                            let mediaUrl = null;
+                            let isVideo = false;
+                            
+                            if (hasImages) {
+                                const image = post.images[0];
+                                mediaUrl = typeof image === 'object' && image.url ? image.url : image;
+                            } else if (hasVideos) {
+                                const video = post.videos[0];
+                                mediaUrl = typeof video === 'object' && video.url ? video.url : video;
+                                isVideo = true;
+                            }
+                            
+                            // Fallback to old post.image or post.media structure if needed
+                            if (!mediaUrl) {
+                                mediaUrl = post.image || (post.media && post.media[0]) || '/placeholder.jpg';
+                                isVideo = mediaUrl?.includes('.mp4') || mediaUrl?.includes('.webm') || mediaUrl?.includes('.mov');
+                            }
+                            
+                            return (
+                                <div 
+                                    key={post._id}
+                                    className="prof-media-grid-item"
+                                    onClick={() => openPostModal(post)}
+                                    onMouseEnter={(e) => {
+                                        if (isVideo) {
+                                            const video = e.currentTarget.querySelector('video');
+                                            if (video) video.play();
+                                        }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        if (isVideo) {
+                                            const video = e.currentTarget.querySelector('video');
+                                            if (video) {
+                                                video.pause();
+                                                video.currentTime = 0;
+                                            }
+                                        }
+                                    }}
+                                >
+                                    {/* Media Thumbnail */}
+                                    {isVideo ? (
+                                        <>
+                                            <video 
+                                                src={mediaUrl} 
+                                                className="prof-media-thumbnail"
+                                                muted
+                                            />
+                                            <div className="prof-video-overlay">
+                                                <Play size={48} className="prof-play-icon" />
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <img 
+                                            src={mediaUrl} 
+                                            alt="Post thumbnail"
+                                            className="prof-media-thumbnail"
+                                        />
+                                    )}
+                                    
+                                    {/* Hover Stats Overlay */}
+                                    <div className="prof-media-overlay">
+                                        <div className="prof-stats-overlay">
+                                            <div className="prof-stat-item">
+                                                <Heart size={18} />
+                                                <span>{post.likes?.length || post.likeCount || 0}</span>
+                                            </div>
+                                            <div className="prof-stat-item">
+                                                <MessageCircle size={18} />
+                                                <span>{post.comments?.length || post.commentCount || 0}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })
+                    )}
+                </div>
+            </div>
 
-                        <div className="prof-profile-stats">
-                            <div className="prof-stat">
-                                <span className="prof-stat-num">{posts.length}</span>
-                                <span className="prof-stat-label">Posts</span>
-                            </div>
-                            <div className="prof-stat">
-                                <span className="prof-stat-num">{profile.followerCount || 0}</span>
-                                <span className="prof-stat-label">Followers</span>
-                            </div>
-                            <div className="prof-stat">
-                                <span className="prof-stat-num">{profile.followingCount || 0}</span>
-                                <span className="prof-stat-label">Following</span>
-                            </div>
-                            <div className="prof-stat">
-                                <span className="prof-stat-num">0</span>
-                                <span className="prof-stat-label">Journeys</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Tabs */}
-                    <div className="prof-profile-tabs">
+            {/* INSTAGRAM-STYLE MEDIA VIEWER MODAL */}
+            {expandedPost && (
+                <>
+                    {/* Blurred Backdrop */}
+                    <div 
+                        className="prof-modal-backdrop-blur"
+                        onClick={closeModal}
+                    ></div>
+                    
+                    {/* Modal Container */}
+                    <div className="prof-media-modal" ref={modalRef}>
+                        {/* Close Button */}
                         <button 
-                            className={`prof-ptab ${activeTab === 'posts' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('posts')}
+                            className="prof-modal-close-btn"
+                            onClick={closeModal}
+                            title="Close (ESC)"
                         >
-                            Posts
+                            <X size={32} />
                         </button>
-                        <button 
-                            className={`prof-ptab ${activeTab === 'saved' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('saved')}
-                        >
-                            Saved
-                        </button>
-                        <button 
-                            className={`prof-ptab ${activeTab === 'journeys' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('journeys')}
-                        >
-                            Journeys
-                        </button>
-                    </div>
 
                     {/* Posts tab */}
                     {activeTab === 'posts' && (
@@ -436,31 +625,98 @@ const Profile = () => {
                         )}
                     </div>
 
-                    <div className="prof-panel-section">
-                        <div className="prof-panel-heading">Mood this week</div>
-                        <div className="prof-mood-history">
-                            <div className="prof-mood-row"><span className="prof-mood-day">Mon</span><div className="prof-mood-dot-sm" style={{background: '#B85C5C'}}></div><span className="prof-mood-label">Anxious</span></div>
-                            <div className="prof-mood-row"><span className="prof-mood-day">Tue</span><div className="prof-mood-dot-sm" style={{background: '#7A9A7A'}}></div><span className="prof-mood-label">Calm</span></div>
-                            <div className="prof-mood-row"><span className="prof-mood-day">Wed</span><div className="prof-mood-dot-sm" style={{background: '#D4A853'}}></div><span className="prof-mood-label">Happy</span></div>
-                            <div className="prof-mood-row"><span className="prof-mood-day">Thu</span><div className="prof-mood-dot-sm" style={{background: '#7A9A7A'}}></div><span className="prof-mood-label">Calm</span></div>
-                            <div className="prof-mood-row"><span className="prof-mood-day">Fri</span><div className="prof-mood-dot-sm" style={{background: '#9A7A8A'}}></div><span className="prof-mood-label">Grateful</span></div>
-                            <div className="prof-mood-row"><span className="prof-mood-day">Sat</span><div className="prof-mood-dot-sm" style={{background: '#7A9A7A'}}></div><span className="prof-mood-label">Calm</span></div>
-                            <div className="prof-mood-row"><span className="prof-mood-day">Sun</span><div className="prof-mood-dot-sm" style={{background: '#7A9A7A'}}></div><span className="prof-mood-label">Calm</span></div>
-                        </div>
-                    </div>
+                            {/* Comments Section */}
+                            <div className="prof-modal-comments">
+                                {expandedPost.comments && expandedPost.comments.length > 0 ? (
+                                    <div className="prof-comments-list">
+                                        {expandedPost.comments.slice(0, 5).map((comment, idx) => (
+                                            <div key={idx} className="prof-comment-item">
+                                                <strong>{comment.userId?.username || comment.username}</strong>
+                                                <span>{comment.text || comment.content}</span>
+                                            </div>
+                                        ))}
+                                        {expandedPost.comments.length > 5 && (
+                                            <button className="prof-view-all-comments">
+                                                View all {expandedPost.comments.length} comments
+                                            </button>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <p className="prof-no-comments">No comments yet</p>
+                                )}
+                            </div>
 
-                    <div className="prof-panel-section">
-                        <div className="prof-panel-heading">Scroll budget</div>
-                        <div style={{fontSize: '12px', color: 'var(--prof-muted)', marginBottom: '6px', display: 'flex', justifyContent: 'space-between'}}>
-                            <span>This week</span><span>3h 20m / 7h</span>
+                            {/* Actions - Like, Comment */}
+                            <div className="prof-modal-actions">
+                                <button 
+                                    className={`prof-action-btn ${liked ? 'active' : ''}`}
+                                    onClick={() => setLiked(!liked)}
+                                    title="Like"
+                                >
+                                    <Heart size={24} fill={liked ? 'currentColor' : 'none'} />
+                                    <span className="prof-action-count">
+                                        {expandedPost.likes?.length || expandedPost.likeCount || 0}
+                                    </span>
+                                </button>
+                                <button className="prof-action-btn" title="Comments">
+                                    <MessageCircle size={24} />
+                                    <span className="prof-action-count">
+                                        {expandedPost.comments?.length || expandedPost.commentCount || 0}
+                                    </span>
+                                </button>
+                                <button className="prof-action-btn" title="Share">
+                                    <Send size={24} />
+                                </button>
+                            </div>
+
+                            {/* Add Comment Input */}
+                            <div className="prof-modal-comment-input">
+                                <input 
+                                    type="text"
+                                    placeholder="Add a comment..."
+                                    className="prof-comment-input-field"
+                                    value={commentText}
+                                    onChange={(e) => setCommentText(e.target.value)}
+                                    onKeyPress={(e) => {
+                                        if (e.key === 'Enter' && commentText.trim()) {
+                                            handleAddComment();
+                                        }
+                                    }}
+                                />
+                                <button 
+                                    className="prof-submit-comment-btn"
+                                    disabled={!commentText.trim()}
+                                    onClick={handleAddComment}
+                                >
+                                    Post
+                                </button>
+                            </div>
                         </div>
-                        <div style={{height: '3px', background: 'var(--prof-border)', borderRadius: '50px', overflow: 'hidden'}}>
-                            <div style={{width: '48%', height: '100%', background: 'var(--prof-accent)', borderRadius: '50px'}}></div>
-                        </div>
-                        <div style={{fontSize: '11px', color: 'var(--prof-subtle)', mt: '5px'}}>Under budget — nice.</div>
+
+                        {/* Navigation Arrows */}
+                        {currentPostIndex !== null && (
+                            <>
+                                <button 
+                                    className="prof-nav-arrow prof-nav-prev"
+                                    onClick={navigateToPrevious}
+                                    disabled={currentPostIndex === 0}
+                                    title="Previous (← arrow key)"
+                                >
+                                    <ChevronLeft size={32} />
+                                </button>
+                                <button 
+                                    className="prof-nav-arrow prof-nav-next"
+                                    onClick={navigateToNext}
+                                    disabled={currentPostIndex === posts.length - 1}
+                                    title="Next (→ arrow key)"
+                                >
+                                    <ChevronRight size={32} />
+                                </button>
+                            </>
+                        )}
                     </div>
-                </aside>
-            </div>
+                </>
+            )}
 
             {/* EDIT PROFILE MODAL */}
             {showEditModal && (

@@ -35,3 +35,8 @@ logs
 # Internal docs
 CLOUDINARY_SETUP.md
 MONGODB_FIX.md
+INSTAGRAM_FEED_GUIDE.md
+client/src/styles/reels.css
+client/src/components/Reels.jsx
+client/src/assets/scrolla-logo.png
+client/src/assets/scrolla-logo.png

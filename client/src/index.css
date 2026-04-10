@@ -151,8 +151,7 @@ body {
   }
 
   .post-card {
-    @apply backdrop-blur-xl rounded-2xl shadow-xl transition-all duration-300;
-    padding: 20px;
+    @apply backdrop-blur-xl rounded-2xl shadow-xl p-4 transition-all duration-300 hover:shadow-2xl;
     background: var(--scrolla-card);
     border: 1px solid rgba(247, 147, 26, 0.1);
     animation: fadeUp .35s ease-out both;

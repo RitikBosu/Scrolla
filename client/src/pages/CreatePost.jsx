@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { useNavigate, useLocation, useSearchParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
-    MessageSquare, Bell, Home, Search, Map, Bookmark, User, Plus, X 
+    MessageSquare, Bell, Home, Search, Map, Bookmark, User, Plus, X, Sun, Moon 
 } from 'lucide-react';
 import { MOODS } from '../utils/constants';
 import { postService } from '../services/postService';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import MediaUpload from '../components/MediaUpload';
 import toast from 'react-hot-toast';
 import './CreatePost.css';
@@ -30,6 +31,7 @@ const CreatePost = () => {
     const location = useLocation();
     const [searchParams] = useSearchParams();
     const { user, logout } = useAuth();
+    const { theme, toggleTheme } = useTheme();
     const editPost = location.state?.post;
 
     // Journey context from URL (e.g. /create-post?journeyId=xxx&journeyTitle=...)
@@ -131,6 +133,17 @@ const CreatePost = () => {
                     <button className="cp-icon-btn" title="Notifications">
                         <Bell className="w-[18px] h-[18px]" />
                         <div className="cp-notif-dot"></div>
+                    </button>
+                    <button 
+                        className="cp-icon-btn" 
+                        title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                        onClick={toggleTheme}
+                    >
+                        {theme === 'dark' ? (
+                            <Sun className="w-[18px] h-[18px]" />
+                        ) : (
+                            <Moon className="w-[18px] h-[18px]" />
+                        )}
                     </button>
                     <div className="cp-nav-divider"></div>
                     <button 

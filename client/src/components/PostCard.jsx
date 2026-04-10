@@ -13,6 +13,7 @@ import { useNavigate } from 'react-router-dom';
 import { useFollow } from '../hooks/useFollow';
 import { useLike } from '../hooks/useLike';
 import { usePostActions } from '../hooks/usePostActions';
+import { getAspectRatio } from '../utils/aspectRatioHelper';
 
 // Cloudinary filter map
 const CLOUDINARY_FILTERS = {
@@ -140,7 +141,7 @@ const AutoplayVideo = ({ src, poster, aspectRatio, filterLabel, trimStart = 0, t
     }[aspectRatio] || 'aspect-video';
 
     return (
-        <div ref={containerRef} className={`relative w-full ${ratioClass} overflow-hidden rounded-xl bg-black`}>
+            <div ref={containerRef} className="relative rounded-lg overflow-hidden" style={{ width: '100%', aspectRatio: aspectMap[aspectRatio] || '16/9', background: '#000' }}>
             <video
                 ref={videoRef}
                 src={src}
@@ -151,7 +152,14 @@ const AutoplayVideo = ({ src, poster, aspectRatio, filterLabel, trimStart = 0, t
                 preload="metadata"
                 disablePictureInPicture
                 controlsList="nodownload nofullscreen noremoteplayback"
-                className="w-full h-full object-cover object-center block"
+                className="w-full h-full rounded-lg"
+                style={{
+                    objectFit: 'cover',
+                    display: 'block',
+                    background: '#000',
+                    width: '100%',
+                    height: '100%'
+                }}
             />
             <button
                 onClick={toggleMute}
@@ -229,59 +237,43 @@ const PostCard = ({ post, onUpdate, onDelete, isFollowing: isFollowingProp }) =>
         navigate(`/edit-post/${post._id}`, { state: { post } });
     };
 
-    // ─── Render image — Instagram accurate ───
-    const renderImage = (image, index, total) => {
+    // ─── Render image with Instagram standard aspect ratio ───
+    const renderImage = (image, index) => {
         const isStructured = typeof image === 'object' && image !== null;
         const url = isStructured ? image.url : image;
         const filter = isStructured ? image.filter : 'none';
-        const aspectRatio = isStructured ? image.aspectRatio : 'original';
+        const width = isStructured ? image.width : null;
+        const height = isStructured ? image.height : null;
         const cssFilter = CSS_FILTERS[filter] || 'none';
-        const isGrid = total > 1;
+        
+        // Smart aspect ratio: use auto-detected or fallback to 4:5 (portrait)
+        const smartRatio = getAspectRatio(width, height);
+        const ratioMap = { '4/5': '4/5', '1/1': '1/1', '1.91/1': '1.91/1' };
 
-        // Grid images: always square crop
-        if (isGrid) {
-            return (
-                <div key={index} className="w-full aspect-square overflow-hidden rounded-sm">
-                    <img
-                        src={url}
-                        alt={`Post image ${index + 1}`}
-                        loading="lazy"
-                        className="w-full h-full object-cover object-center block"
-                        style={{ filter: cssFilter !== 'none' ? cssFilter : undefined }}
-                        onError={(e) => { e.target.src = 'https://via.placeholder.com/400x300?text=Image+Not+Found'; }}
-                    />
-                </div>
-            );
-        }
-
-        // Single image with a known ratio: lock container, fill with cover
-        const knownRatioClass = {
-            '1:1':  'aspect-square',
-            '4:3':  'aspect-[4/3]',
-            '16:9': 'aspect-video',
-            '9:16': 'aspect-[9/16]', // Allow full vertical length
-            '3:4':  'aspect-[3/4]',
-            '4:5':  'aspect-[4/5]',
-        }[aspectRatio];
-
-        if (knownRatioClass) {
-            return (
-                <div key={index} className={`w-full ${knownRatioClass} overflow-hidden rounded-xl`}>
-                    <img
-                        src={url}
-                        alt={`Post image ${index + 1}`}
-                        loading="lazy"
-                        className="w-full h-full object-cover object-center block"
-                        style={{ filter: cssFilter !== 'none' ? cssFilter : undefined }}
-                        onError={(e) => { e.target.src = 'https://via.placeholder.com/400x300?text=Image+Not+Found'; }}
-                    />
-                </div>
-            );
-        }
-
-        // Single image with NO stored ratio — use SmartImage which auto-detects
-        // real dimensions and clamps between 1.91:1 and 4:5 (exactly like Instagram)
-        return <SmartImage key={index} url={url} cssFilter={cssFilter} />;
+        return (
+            <div key={index} className="post-image-wrapper">
+                <img
+                    src={url}
+                    alt={`Post image ${index + 1}`}
+                    className="post-img-blurred"
+                    loading="lazy"
+                    style={{
+                        width: "100%",
+                        aspectRatio: ratioMap[smartRatio] || smartRatio,
+                        objectFit: "cover",
+                        borderRadius: "12px",
+                        filter: cssFilter !== 'none' ? cssFilter : undefined,
+                        backgroundColor: '#000',
+                        maxHeight: 'none', // REMOVED max-height limit
+                        display: 'block'
+                    }}
+                    onError={(e) => { e.target.src = 'https://via.placeholder.com/400x300?text=Image+Not+Found'; }}
+                    onLoad={(e) => {
+                        e.target.classList.add('loaded');
+                    }}
+                />
+            </div>
+        );
     };
 
     // ─── Render video ───
@@ -407,29 +399,12 @@ const PostCard = ({ post, onUpdate, onDelete, isFollowing: isFollowingProp }) =>
             {/* Content */}
             <p className="post-content mb-4 leading-relaxed">{post.content}</p>
 
-            {/* Images — Instagram-style media grid (Tailwind) */}
-            {post.images && post.images.length > 0 && (() => {
-                const count = Math.min(post.images.length, 4);
-                const gridClass = {
-                    1: 'grid grid-cols-1',
-                    2: 'grid grid-cols-2 gap-0.5',
-                    3: 'grid grid-cols-[2fr_1fr] grid-rows-2 gap-0.5',
-                    4: 'grid grid-cols-2 grid-rows-2 gap-0.5',
-                }[count];
-                return (
-                    <div className={`${gridClass} overflow-hidden rounded-xl mb-3`}>
-                        {post.images.slice(0, count).map((image, index) => {
-                            // For 3-image layout first image spans 2 rows
-                            const spanClass = count === 3 && index === 0 ? 'row-span-2' : '';
-                            return (
-                                <div key={index} className={spanClass}>
-                                    {renderImage(image, index, post.images.length)}
-                                </div>
-                            );
-                        })}
-                    </div>
-                );
-            })()}
+            {/* Images */}
+            {post.images && post.images.length > 0 && (
+                <div className="mb-4 space-y-3">
+                    {post.images.map((image, index) => renderImage(image, index))}
+                </div>
+            )}
 
             {/* Videos */}
             {post.videos && post.videos.length > 0 && (

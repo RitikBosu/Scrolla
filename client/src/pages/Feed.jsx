@@ -6,6 +6,7 @@ import { useTheme } from '../context/ThemeContext';
 import PostCard from '../components/PostCard';
 import SkeletonPostCard from '../components/SkeletonPostCard';
 import LoadingSpinner from '../components/LoadingSpinner';
+import BrandLogo from '../components/BrandLogo';
 import { postService } from '../services/postService';
 import { userService } from '../services/userService';
 import { useApp } from '../context/AppContext';
@@ -221,7 +222,9 @@ const Feed = () => {
         >
             {/* NAV */}
             <nav className="feed-nav">
-                <Link to="/feed" className="feed-logo">Scrolla</Link>
+                <Link to="/feed" className="feed-logo">
+                    <BrandLogo size="md" />
+                </Link>
                 <div className="feed-nav-end">
                     <button className="feed-icon-btn" title="Messages">
                         <MessageSquare className="w-[18px] h-[18px]" />
@@ -350,7 +353,7 @@ const Feed = () => {
                 {/* FEED */}
                 <main className="feed-main">
                     {/* Compose */}
-                    <div className="feed-compose" onClick={() => navigate('/create-post')}>
+                    <div className="feed-compose">
                         <div className="feed-compose-avatar">
                             {user?.avatar ? (
                                 <img src={user.avatar} alt="Me" />
@@ -359,7 +362,7 @@ const Feed = () => {
                             )}
                         </div>
                         <div className="feed-compose-placeholder">What's on your mind?</div>
-                        <button className="feed-compose-btn" onClick={(e) => { e.stopPropagation(); navigate('/create-post'); }}>
+                        <button className="feed-compose-btn" onClick={() => navigate('/create-post')}>
                             + Post
                         </button>
                     </div>
@@ -393,46 +396,46 @@ const Feed = () => {
                         initial="hidden"
                         animate="visible"
                     >
-                        {loading ? (
-                            <>
-                                <SkeletonPostCard />
-                                <SkeletonPostCard />
-                                <SkeletonPostCard />
-                            </>
-                        ) : posts.length === 0 ? (
-                            <div style={{background:'white', border:'1px solid #E4E0DA', borderRadius:'12px', textAlign:'center', padding:'48px 16px'}}>
-                                <p style={{color:'#9A9590', marginBottom:'16px'}}>
-                                    {activeTab === 'foryou' || activeTab === 'following'
-                                        ? "You're not following anyone yet. Explore posts and follow users!"
-                                        : kidsMode
-                                            ? 'No kid-safe posts found matching your mood.'
-                                            : 'No posts yet for this mood. Be the first to create one!'}
-                                </p>
-                                {(activeTab === 'foryou' || activeTab === 'following') && (
-                                    <button
-                                        onClick={handleExploreClick}
-                                        style={{padding:'10px 20px', borderRadius:'8px', border:'none', background:'#6B7F6E', color:'white', fontSize:'14px', fontWeight:'500', cursor:'pointer'}}
+                            {loading ? (
+                                <>
+                                    <SkeletonPostCard />
+                                    <SkeletonPostCard />
+                                    <SkeletonPostCard />
+                                </>
+                            ) : posts.length === 0 ? (
+                                <div style={{background:'white', border:'1px solid #E4E0DA', borderRadius:'12px', textAlign:'center', padding:'48px 16px'}}>
+                                    <p style={{color:'#9A9590', marginBottom:'16px'}}>
+                                        {activeTab === 'foryou' || activeTab === 'following'
+                                            ? "You're not following anyone yet. Explore posts and follow users!"
+                                            : kidsMode
+                                                ? 'No kid-safe posts found matching your mood.'
+                                                : 'No posts yet for this mood. Be the first to create one!'}
+                                    </p>
+                                    {(activeTab === 'foryou' || activeTab === 'following') && (
+                                        <button
+                                            onClick={handleExploreClick}
+                                            style={{padding:'10px 20px', borderRadius:'8px', border:'none', background:'#6B7F6E', color:'white', fontSize:'14px', fontWeight:'500', cursor:'pointer'}}
+                                        >
+                                            Explore Posts
+                                        </button>
+                                    )}
+                                </div>
+                            ) : (
+                                posts.map((post) => (
+                                    <motion.div
+                                        key={post._id}
+                                        variants={itemVariants}
                                     >
-                                        Explore Posts
-                                    </button>
-                                )}
-                            </div>
-                        ) : (
-                            posts.map((post) => (
-                                <motion.div
-                                    key={post._id}
-                                    variants={itemVariants}
-                                >
-                                    <PostCard 
-                                        post={post} 
-                                        onUpdate={fetchPosts} 
-                                        onDelete={fetchPosts} 
-                                        isFollowing={followingIds.has(post.author?._id)}
-                                    />
-                                </motion.div>
-                            ))
-                        )}
-                    </motion.div>
+                                        <PostCard 
+                                            post={post} 
+                                            onUpdate={fetchPosts} 
+                                            onDelete={fetchPosts} 
+                                            isFollowing={followingIds.has(post.author?._id)}
+                                        />
+                                    </motion.div>
+                                ))
+                            )}
+                        </motion.div>
                 </main>
 
                 {/* RIGHT PANEL */}
@@ -497,7 +500,7 @@ const Feed = () => {
                     <div className="feed-panel-section">
                         <div className="feed-panel-heading">Suggested</div>
                         {suggestedUsers.length > 0 ? (
-                            <div style={{background:'rgba(15, 17, 21, 0.8)', border:'1px solid rgba(247, 147, 26, 0.15)', borderRadius:'12px', padding:'12px 14px'}}>
+                            <div className="feed-suggest-container">
                                 {suggestedUsers.map(sUser => (
                                     <div className="feed-suggest" key={sUser._id}>
                                         <div 

@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import { Send, Edit2, Trash2 } from 'lucide-react';
 import { commentService } from '../services/commentService';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { formatDate } from '../utils/formatDate';
 import LoadingSpinner from './LoadingSpinner';
 
 const CommentSection = ({ postId }) => {
     const { user } = useAuth();
+    const { theme } = useTheme();
     const [comments, setComments] = useState([]);
     const [newComment, setNewComment] = useState('');
     const [loading, setLoading] = useState(true);
@@ -85,12 +87,32 @@ const CommentSection = ({ postId }) => {
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
                         placeholder="Write a comment..."
-                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none"
+                        style={{
+                            backgroundColor: theme === 'light' ? '#ffffff' : '#1f2937',
+                            color: theme === 'light' ? '#111827' : '#f3f4f6',
+                            borderColor: theme === 'light' ? '#d1d5db' : '#4b5563',
+                        }}
+                        className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:outline-none"
+                        onFocus={(e) => {
+                            e.target.style.borderColor = theme === 'light' ? '#3b82f6' : '#2563eb';
+                            e.target.style.boxShadow = `0 0 0 2px ${theme === 'light' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(37, 99, 235, 0.1)'}`;
+                        }}
+                        onBlur={(e) => {
+                            e.target.style.borderColor = theme === 'light' ? '#d1d5db' : '#4b5563';
+                            e.target.style.boxShadow = 'none';
+                        }}
                     />
                     <button
                         type="submit"
                         disabled={!newComment.trim()}
-                        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                        style={{
+                            backgroundColor: !newComment.trim() 
+                                ? (theme === 'light' ? '#d1d5db' : '#4b5563')
+                                : '#3b82f6',
+                            color: '#ffffff',
+                            opacity: !newComment.trim() ? 0.6 : 1,
+                        }}
+                        className="px-4 py-2 rounded-lg cursor-pointer transition-colors flex items-center gap-2"
                     >
                         <Send className="w-4 h-4" />
                     </button>
@@ -100,7 +122,7 @@ const CommentSection = ({ postId }) => {
             {/* Comments List */}
             <div className="space-y-3">
                 {comments.length === 0 ? (
-                    <p className="text-gray-500 text-center py-4">No comments yet. Be the first to comment!</p>
+                    <p style={{ color: theme === 'light' ? '#666666' : '#a0aec0' }} className="text-center py-4">No comments yet. Be the first to comment!</p>
                 ) : (
                     comments.map((comment) => (
                         <div key={comment._id} className="flex gap-3">
@@ -110,12 +132,15 @@ const CommentSection = ({ postId }) => {
                                 className="w-10 h-10 rounded-full object-cover"
                             />
                             <div className="flex-1">
-                                <div className="bg-gray-50 rounded-lg p-3">
+                                <div style={{
+                                    backgroundColor: theme === 'light' ? '#ffffff' : '#374151',
+                                    color: theme === 'light' ? '#111827' : '#f3f4f6',
+                                }} className="rounded-lg p-3">
                                     <div className="flex items-center justify-between mb-1">
-                                        <h4 className="font-semibold text-sm text-gray-800">
+                                        <h4 style={{ color: theme === 'light' ? '#111827' : '#f3f4f6' }} className="font-semibold text-sm">
                                             {comment.author.username}
                                         </h4>
-                                        <span className="text-xs text-gray-500">
+                                        <span style={{ color: theme === 'light' ? '#666666' : '#9ca3af' }} className="text-xs">
                                             {formatDate(comment.createdAt)}
                                         </span>
                                     </div>
@@ -126,7 +151,12 @@ const CommentSection = ({ postId }) => {
                                                 type="text"
                                                 value={editContent}
                                                 onChange={(e) => setEditContent(e.target.value)}
-                                                className="flex-1 px-3 py-1 border border-gray-300 rounded"
+                                                style={{
+                                                    backgroundColor: theme === 'light' ? '#f3f4f6' : '#1f2937',
+                                                    color: theme === 'light' ? '#111827' : '#f3f4f6',
+                                                    borderColor: theme === 'light' ? '#d1d5db' : '#4b5563',
+                                                }}
+                                                className="flex-1 px-3 py-1 border rounded"
                                             />
                                             <button
                                                 onClick={() => handleEditComment(comment._id)}
@@ -136,13 +166,17 @@ const CommentSection = ({ postId }) => {
                                             </button>
                                             <button
                                                 onClick={() => setEditingId(null)}
-                                                className="px-3 py-1 bg-gray-300 rounded text-sm"
+                                                style={{
+                                                    backgroundColor: theme === 'light' ? '#e5e7eb' : '#4b5563',
+                                                    color: theme === 'light' ? '#111827' : '#f3f4f6',
+                                                }}
+                                                className="px-3 py-1 rounded text-sm"
                                             >
                                                 Cancel
                                             </button>
                                         </div>
                                     ) : (
-                                        <p className="text-gray-700 text-sm">{comment.content}</p>
+                                        <p style={{ color: theme === 'light' ? '#111827' : '#f3f4f6' }} className="text-sm">{comment.content}</p>
                                     )}
                                 </div>
 
@@ -154,14 +188,16 @@ const CommentSection = ({ postId }) => {
                                                 setEditingId(comment._id);
                                                 setEditContent(comment.content);
                                             }}
-                                            className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                                            style={{ color: theme === 'light' ? '#2563eb' : '#60a5fa' }}
+                                            className="text-xs flex items-center gap-1"
                                         >
                                             <Edit2 className="w-3 h-3" />
                                             Edit
                                         </button>
                                         <button
                                             onClick={() => handleDeleteComment(comment._id)}
-                                            className="text-xs text-red-600 hover:text-red-800 flex items-center gap-1"
+                                            style={{ color: theme === 'light' ? '#dc2626' : '#f87171' }}
+                                            className="text-xs flex items-center gap-1"
                                         >
                                             <Trash2 className="w-3 h-3" />
                                             Delete

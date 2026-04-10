@@ -46,115 +46,95 @@ const TimeUpModal = ({ isOpen, journeyName, onContinue, onLogout, timeSpent }) =
             }}
           >
             <motion.div
-              className="p-10 text-center max-w-sm"
+              className="p-8 text-center max-w-sm"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
             >
               {/* Alarm Icon */}
               <motion.div
-                className="flex justify-center mb-8"
+                className="flex justify-center mb-6"
                 animate={{
-                  rotate: [0, -10, 10, -10, 10, 0],
+                  y: [0, -4, 0],
                 }}
                 transition={{
-                  duration: 0.5,
+                  duration: 0.3,
                   repeat: isOpen ? Infinity : 0,
-                  repeatDelay: 0.5,
+                  repeatDelay: 1,
                 }}
               >
                 <AlarmClockIcon
                   ref={alarmRef}
-                  size={64}
+                  size={56}
                   style={{
                     color: '#F7931A',
-                    filter: 'drop-shadow(0 0 16px rgba(247, 147, 26, 0.8))',
                   }}
                 />
               </motion.div>
 
               {/* Title */}
-              <motion.h2
-                className="text-4xl font-bold mb-3 font-heading uppercase tracking-widest"
-                style={{
-                  color: '#F7931A',
-                  textShadow: '0 0 16px rgba(247, 147, 26, 0.8), 0 2px 8px rgba(0, 0, 0, 0.8)',
-                  letterSpacing: '2px',
-                }}
-                animate={{
-                  opacity: [1, 0.8, 1],
-                }}
-                transition={{
-                  duration: 1,
-                  repeat: Infinity,
-                }}
-              >
-                ⏰ TIME'S UP!
-              </motion.h2>
+              <h2 className="text-3xl font-bold mb-4"
+                style={{ color: '#F7931A' }}>
+                Session Complete
+              </h2>
 
               {/* Journey Name */}
               {journeyName && (
-                <p className="mb-3 font-heading text-base font-semibold tracking-wide"
-                   style={{
-                     color: '#FFD600',
-                     textShadow: '0 0 8px rgba(255, 214, 0, 0.6)',
-                   }}>
-                  {journeyName} Session Complete
+                <p className="mb-4 text-sm font-medium"
+                   style={{ color: '#9ca3af' }}>
+                  {journeyName}
                 </p>
               )}
 
               {/* Time Spent */}
               {timeSpent && (
-                <p className="mb-6 font-mono text-2xl font-bold tracking-wider"
-                   style={{
-                     color: '#F7931A',
-                     textShadow: '0 0 12px rgba(247, 147, 26, 0.6)',
-                   }}>
-                  You spent {timeSpent}
-                </p>
+                <div className="mb-6 p-3 rounded-lg"
+                     style={{ backgroundColor: 'rgba(247, 147, 26, 0.08)', borderLeft: '3px solid #F7931A' }}>
+                  <p className="font-mono text-lg font-semibold"
+                     style={{ color: '#F7931A' }}>
+                    {timeSpent}
+                  </p>
+                </div>
               )}
 
               {/* Message */}
               <p className="mb-8 text-sm leading-relaxed"
-                 style={{
-                   textShadow: '0 2px 4px rgba(0, 0, 0, 0.6)',
-                   color: '#e0e0e0',
-                 }}>
-                Great job staying focused! Time to take a break or reset your intention.
+                 style={{ color: '#d1d5db' }}>
+                Great job staying focused. Take a break and hydrate.
               </p>
 
               {/* Action Buttons */}
-              <div className="flex gap-4">
+              <div className="flex gap-3">
                 <motion.button
                   onClick={onContinue}
-                  className="flex-1 px-6 py-3 border-2 bg-transparent font-heading font-bold uppercase text-xs tracking-widest transition-all rounded-full"
+                  className="flex-1 px-4 py-2.5 border rounded-lg font-semibold text-sm transition-all"
                   style={{
                     borderColor: '#F7931A',
                     color: '#F7931A',
-                    textShadow: '0 0 8px rgba(247, 147, 26, 0.6)',
+                    backgroundColor: 'transparent',
                   }}
                   whileHover={{
-                    backgroundColor: 'rgba(247, 147, 26, 0.15)',
-                    boxShadow: '0 0 16px rgba(247, 147, 26, 0.4)',
+                    backgroundColor: 'rgba(247, 147, 26, 0.1)',
                   }}
-                  whileTap={{ scale: 0.98 }}
+                  whileTap={{ scale: 0.97 }}
                 >
                   Continue
                 </motion.button>
 
                 <motion.button
                   onClick={onLogout}
-                  className="flex-1 px-6 py-3 border-2 bg-transparent font-heading font-bold uppercase text-xs tracking-widest transition-all rounded-full"
+                  className="flex-1 px-4 py-2.5 border rounded-lg font-semibold text-sm transition-all"
                   style={{
-                    borderColor: '#FFD600',
-                    color: '#FFD600',
-                    textShadow: '0 0 8px rgba(255, 214, 0, 0.6)',
+                    borderColor: '#9ca3af',
+                    color: '#e5e7eb',
+                    backgroundColor: 'transparent',
                   }}
                   whileHover={{
-                    backgroundColor: 'rgba(255, 214, 0, 0.15)',
-                    boxShadow: '0 0 16px rgba(255, 214, 0, 0.4)',
+                    backgroundColor: 'rgba(229, 231, 235, 0.1)',
+                    borderColor: '#e5e7eb',
+                    color: '#f3f4f6',
                   }}
-                  whileTap={{ scale: 0.98 }}
+                  whileTap={{ scale: 0.97 }}
                 >
                   Logout
                 </motion.button>
