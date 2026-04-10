@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import {
-    Edit, UserPlus, UserMinus, MessageSquare, Bell,
-    Home, Search, Map, Bookmark, User, Sun, Moon,
+import { 
+    Edit, UserPlus, UserMinus, MessageSquare, Bell, 
+    Home, Search, Map, Bookmark, User, Sun, Moon, 
     ChevronLeft, ChevronRight, Play, Heart, MessageCircle, Send, X
 } from 'lucide-react';
 import PostCard from '../components/PostCard';
@@ -30,7 +30,7 @@ const Profile = () => {
     const [editForm, setEditForm] = useState({ username: '', bio: '', avatar: null });
     const [uploadPreview, setUploadPreview] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
-
+    
     // Advanced modal state
     const [expandedPost, setExpandedPost] = useState(null);
     const [currentPostIndex, setCurrentPostIndex] = useState(null);
@@ -43,16 +43,13 @@ const Profile = () => {
     useEffect(() => {
         fetchProfile();
         fetchUserPosts();
-        // Reset journey history when profile changes
-        setJourneyHistory([]);
-        setJourneyHistoryLoaded(false);
     }, [id]);
 
     // Keyboard navigation for modal
     useEffect(() => {
         const handleKeyDown = (e) => {
             if (!expandedPost) return;
-
+            
             if (e.key === 'Escape') {
                 closeModal();
             } else if (e.key === 'ArrowLeft') {
@@ -126,7 +123,7 @@ const Profile = () => {
             setExpandedPost(updatedPost);
 
             // Update posts array
-            const updatedPosts = posts.map(p =>
+            const updatedPosts = posts.map(p => 
                 p._id === expandedPost._id ? updatedPost : p
             );
             setPosts(updatedPosts);
@@ -183,8 +180,8 @@ const Profile = () => {
     };
 
     const handleEditProfile = () => {
-        setEditForm({
-            username: profile.username,
+        setEditForm({ 
+            username: profile.username, 
             bio: profile.bio || '',
             avatar: null
         });
@@ -278,7 +275,7 @@ const Profile = () => {
 
     return (
         <div className="profile-page-wrapper">
-
+            
             {/* NAV */}
             <nav className="prof-nav">
                 <Link to="/feed" className="prof-logo">
@@ -290,8 +287,8 @@ const Profile = () => {
                         <Bell className="w-[18px] h-[18px]" />
                         <div className="prof-notif-dot"></div>
                     </button>
-                    <button
-                        className="prof-icon-btn"
+                    <button 
+                        className="prof-icon-btn" 
                         title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
                         onClick={toggleTheme}
                     >
@@ -302,8 +299,8 @@ const Profile = () => {
                         )}
                     </button>
                     <div className="prof-nav-divider"></div>
-                    <button
-                        className="prof-avatar-sm"
+                    <button 
+                        className="prof-avatar-sm" 
                         onClick={() => navigate(`/profile/${currentUser?._id}`)}
                         title="Go to my profile"
                     >
@@ -378,8 +375,8 @@ const Profile = () => {
                                     Edit Profile
                                 </button>
                             ) : (
-                                <button
-                                    onClick={handleFollow}
+                                <button 
+                                    onClick={handleFollow} 
                                     className={isFollowing ? 'prof-btn prof-btn-secondary' : 'prof-btn prof-btn-primary'}
                                 >
                                     {isFollowing ? 'Unfollow' : 'Follow'}
@@ -430,25 +427,25 @@ const Profile = () => {
 
                 {/* Tabs */}
                 <div className="prof-tabs">
-                    <button
+                    <button 
                         className={`prof-tab ${activeTab === 'posts' ? 'active' : ''}`}
                         onClick={() => setActiveTab('posts')}
                     >
                         Posts
                     </button>
-                    <button
+                    <button 
                         className={`prof-tab ${activeTab === 'saved' ? 'active' : ''}`}
                         onClick={() => setActiveTab('saved')}
                     >
                         Saved
                     </button>
-                    <button
+                    <button 
                         className={`prof-tab ${activeTab === 'journeys' ? 'active' : ''}`}
                         onClick={() => setActiveTab('journeys')}
                     >
                         Journeys
                     </button>
-                    <button
+                    <button 
                         className={`prof-tab ${activeTab === 'mood' ? 'active' : ''}`}
                         onClick={() => setActiveTab('mood')}
                     >
@@ -474,10 +471,10 @@ const Profile = () => {
                             // Get first image or video
                             const hasImages = post.images && post.images.length > 0;
                             const hasVideos = post.videos && post.videos.length > 0;
-
+                            
                             let mediaUrl = null;
                             let isVideo = false;
-
+                            
                             if (hasImages) {
                                 const image = post.images[0];
                                 mediaUrl = typeof image === 'object' && image.url ? image.url : image;
@@ -486,15 +483,15 @@ const Profile = () => {
                                 mediaUrl = typeof video === 'object' && video.url ? video.url : video;
                                 isVideo = true;
                             }
-
+                            
                             // Fallback to old post.image or post.media structure if needed
                             if (!mediaUrl) {
                                 mediaUrl = post.image || (post.media && post.media[0]) || '/placeholder.jpg';
                                 isVideo = mediaUrl?.includes('.mp4') || mediaUrl?.includes('.webm') || mediaUrl?.includes('.mov');
                             }
-
+                            
                             return (
-                                <div
+                                <div 
                                     key={post._id}
                                     className="prof-media-grid-item"
                                     onClick={() => openPostModal(post)}
@@ -517,8 +514,8 @@ const Profile = () => {
                                     {/* Media Thumbnail */}
                                     {isVideo ? (
                                         <>
-                                            <video
-                                                src={mediaUrl}
+                                            <video 
+                                                src={mediaUrl} 
                                                 className="prof-media-thumbnail"
                                                 muted
                                             />
@@ -527,13 +524,13 @@ const Profile = () => {
                                             </div>
                                         </>
                                     ) : (
-                                        <img
-                                            src={mediaUrl}
+                                        <img 
+                                            src={mediaUrl} 
                                             alt="Post thumbnail"
                                             className="prof-media-thumbnail"
                                         />
                                     )}
-
+                                    
                                     {/* Hover Stats Overlay */}
                                     <div className="prof-media-overlay">
                                         <div className="prof-stats-overlay">
@@ -558,15 +555,15 @@ const Profile = () => {
             {expandedPost && (
                 <>
                     {/* Blurred Backdrop */}
-                    <div
+                    <div 
                         className="prof-modal-backdrop-blur"
                         onClick={closeModal}
                     ></div>
-
+                    
                     {/* Modal Container */}
                     <div className="prof-media-modal" ref={modalRef}>
                         {/* Close Button */}
-                        <button
+                        <button 
                             className="prof-modal-close-btn"
                             onClick={closeModal}
                             title="Close (ESC)"
@@ -577,27 +574,27 @@ const Profile = () => {
                         {/* Left Section - Media */}
                         <div className="prof-modal-media-section">
                             {expandedPost.videos && expandedPost.videos.length > 0 ? (
-                                <video
-                                    src={typeof expandedPost.videos[0] === 'object' ? expandedPost.videos[0].url : expandedPost.videos[0]}
+                                <video 
+                                    src={typeof expandedPost.videos[0] === 'object' ? expandedPost.videos[0].url : expandedPost.videos[0]} 
                                     className="prof-modal-media"
                                     controls
                                     autoPlay
                                     muted
                                 />
                             ) : expandedPost.images && expandedPost.images.length > 0 ? (
-                                <img
+                                <img 
                                     src={typeof expandedPost.images[0] === 'object' ? expandedPost.images[0].url : expandedPost.images[0]}
                                     alt="Post"
                                     className="prof-modal-media"
                                 />
                             ) : (
-                                <img
+                                <img 
                                     src={expandedPost.image || '/placeholder.jpg'}
                                     alt="Post"
                                     className="prof-modal-media"
                                 />
                             )}
-
+                            
                             {/* Post Counter - Below Media */}
                             {currentPostIndex !== null && (
                                 <div className="prof-media-counter">
@@ -611,8 +608,8 @@ const Profile = () => {
                             {/* Header */}
                             <div className="prof-modal-header-section">
                                 <div className="prof-modal-user-info">
-                                    <img
-                                        src={profile?.avatar || '/avatar.png'}
+                                    <img 
+                                        src={profile?.avatar || '/avatar.png'} 
                                         alt={profile?.username}
                                         className="prof-modal-avatar"
                                     />
@@ -665,7 +662,7 @@ const Profile = () => {
 
                             {/* Actions - Like, Comment */}
                             <div className="prof-modal-actions">
-                                <button
+                                <button 
                                     className={`prof-action-btn ${liked ? 'active' : ''}`}
                                     onClick={() => setLiked(!liked)}
                                     title="Like"
@@ -688,7 +685,7 @@ const Profile = () => {
 
                             {/* Add Comment Input */}
                             <div className="prof-modal-comment-input">
-                                <input
+                                <input 
                                     type="text"
                                     placeholder="Add a comment..."
                                     className="prof-comment-input-field"
@@ -700,7 +697,7 @@ const Profile = () => {
                                         }
                                     }}
                                 />
-                                <button
+                                <button 
                                     className="prof-submit-comment-btn"
                                     disabled={!commentText.trim()}
                                     onClick={handleAddComment}
@@ -713,7 +710,7 @@ const Profile = () => {
                         {/* Navigation Arrows */}
                         {currentPostIndex !== null && (
                             <>
-                                <button
+                                <button 
                                     className="prof-nav-arrow prof-nav-prev"
                                     onClick={navigateToPrevious}
                                     disabled={currentPostIndex === 0}
@@ -721,7 +718,7 @@ const Profile = () => {
                                 >
                                     <ChevronLeft size={32} />
                                 </button>
-                                <button
+                                <button 
                                     className="prof-nav-arrow prof-nav-next"
                                     onClick={navigateToNext}
                                     disabled={currentPostIndex === posts.length - 1}
@@ -739,16 +736,16 @@ const Profile = () => {
             {showEditModal && (
                 <>
                     {/* Backdrop */}
-                    <div
+                    <div 
                         className="prof-modal-backdrop"
                         onClick={() => setShowEditModal(false)}
                     ></div>
-
+                    
                     {/* Modal */}
                     <div className="prof-edit-modal">
                         <div className="prof-modal-header">
                             <h2 className="prof-modal-title">Edit Profile</h2>
-                            <button
+                            <button 
                                 className="prof-modal-close"
                                 onClick={() => setShowEditModal(false)}
                                 aria-label="Close"
@@ -812,13 +809,13 @@ const Profile = () => {
 
                             {/* Action Buttons */}
                             <div className="prof-modal-actions">
-                                <button
+                                <button 
                                     className="prof-btn-cancel"
                                     onClick={() => setShowEditModal(false)}
                                 >
                                     Cancel
                                 </button>
-                                <button
+                                <button 
                                     className="prof-btn-save"
                                     onClick={handleSaveProfile}
                                 >
