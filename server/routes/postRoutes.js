@@ -7,6 +7,8 @@ import Like from '../models/Like.js';
 import SavedPost from '../models/SavedPost.js';
 import HiddenPost from '../models/HiddenPost.js';
 import ReportedPost from '../models/ReportedPost.js';
+import SharedJourney from '../models/SharedJourney.js';
+import JourneyMember from '../models/JourneyMember.js';
 import { protect } from '../middleware/auth.js';
 import { optionalAuth } from '../middleware/optionalAuth.js';
 
@@ -48,7 +50,7 @@ router.get('/', optionalAuth, async (req, res) => {
         const { mood, kidSafe, following, limit = 20, page = 1 } = req.query;
 
         // Build query
-        const query = {};
+        const query = { journey: null };
 
         if (mood && mood !== 'all') {
             query.mood = mood;
@@ -100,7 +102,7 @@ router.get('/', optionalAuth, async (req, res) => {
 // @access  Public
 router.get('/user/:userId', optionalAuth, async (req, res) => {
     try {
-        const posts = await Post.find({ author: req.params.userId })
+        const posts = await Post.find({ author: req.params.userId, journey: null })
             .populate('author', 'username avatar bio')
             .sort({ createdAt: -1 });
 
@@ -154,7 +156,26 @@ router.post('/', protect, [
     }
 
     try {
-        const { content, images, videos, mood, hashtags, kidSafe } = req.body;
+        const { content, images, videos, mood, hashtags, kidSafe, journeyId } = req.body;
+
+        // ─── Journey validation ───
+        let journeyRef = null;
+        if (journeyId) {
+            const [journey, membership] = await Promise.all([
+                SharedJourney.findById(journeyId).select('closedAt deadline postingMode creator').lean(),
+                JourneyMember.findOne({ journey: journeyId, user: req.user._id }).select('role').lean()
+            ]);
+
+            if (!journey) return res.status(404).json({ message: 'Journey not found' });
+            if (journey.closedAt || journey.deadline <= new Date()) {
+                return res.status(400).json({ message: 'Journey has ended — cannot post' });
+            }
+            if (!membership) return res.status(403).json({ message: 'Join the journey before posting' });
+            if (journey.postingMode === 'broadcast' && journey.creator.toString() !== req.user._id.toString()) {
+                return res.status(403).json({ message: 'Only the creator can post in broadcast mode' });
+            }
+            journeyRef = journeyId;
+        }
 
         const post = await Post.create({
             author: req.user._id,
@@ -163,11 +184,18 @@ router.post('/', protect, [
             videos: videos || [],
             mood,
             hashtags: (hashtags || []).map(tag => tag.toLowerCase().trim()),
-            kidSafe: kidSafe || false
+            kidSafe: kidSafe || false,
+            journey: journeyRef
         });
 
+        // Increment postCount atomically (non-blocking)
+        if (journeyRef) {
+            SharedJourney.findByIdAndUpdate(journeyRef, { $inc: { postCount: 1 } }).exec();
+        }
+
         const populatedPost = await Post.findById(post._id)
-            .populate('author', 'username avatar followers');
+            .populate('author', 'username avatar')
+            .lean();
 
         res.status(201).json(populatedPost);
     } catch (error) {

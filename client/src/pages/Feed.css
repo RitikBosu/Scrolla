@@ -356,7 +356,7 @@
 /* ─── MAIN FEED ─── */
 .feed-main {
   flex: 1;
-  max-width: 800px;
+  max-width: 720px;
   padding: 28px 0;
   min-width: 0;
 }

@@ -196,10 +196,10 @@ const Feed = () => {
                 <div style={{background:'white', padding:'32px', borderRadius:'12px', border:'1px solid #E4E0DA', textAlign:'center', maxWidth:'400px', width:'100%'}}>
                     <CheckCircle style={{width:'80px', height:'80px', color:'#6B7F6E', margin:'0 auto 24px'}} />
                     <h1 style={{fontSize:'24px', fontWeight:'bold', color:'#2C2B28', marginBottom:'16px'}}>
-                        Journey Complete!
+                        Session Complete!
                     </h1>
                     <p style={{color:'#9A9590', marginBottom:'32px'}}>
-                        You've completed your mindful journey. Time to take a break!
+                        Your time is up, you can stop scrolling now.
                     </p>
                     <button
                         onClick={handleNewJourney}
@@ -296,7 +296,7 @@ const Feed = () => {
                     >
                         <Search className="w-[16px] h-[16px]" /> Explore
                     </button>
-                    <Link to="#" className="feed-nav-link">
+                    <Link to="/journeys" className="feed-nav-link">
                         <Map className="w-[16px] h-[16px]" /> Journeys
                     </Link>
                     <Link to="#" className="feed-nav-link">
@@ -442,7 +442,7 @@ const Feed = () => {
                         whileHover={{ scale: 1.02 }}
                         transition={{ type: 'spring', stiffness: 300 }}
                     >
-                        <div className="feed-panel-heading">Active Journeys</div>
+                        <div className="feed-panel-heading">Focus Sessions</div>
                         
                         {/* Deep Focus - 30 min */}
                         <motion.div 

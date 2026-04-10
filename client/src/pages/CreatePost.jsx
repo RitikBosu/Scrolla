@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
     MessageSquare, Bell, Home, Search, Map, Bookmark, User, Plus, X 
@@ -28,8 +28,13 @@ const MOOD_EMOJIS = {
 const CreatePost = () => {
     const navigate = useNavigate();
     const location = useLocation();
+    const [searchParams] = useSearchParams();
     const { user, logout } = useAuth();
     const editPost = location.state?.post;
+
+    // Journey context from URL (e.g. /create-post?journeyId=xxx&journeyTitle=...)
+    const journeyId = searchParams.get('journeyId');
+    const journeyTitle = searchParams.get('journeyTitle');
 
     const [formData, setFormData] = useState({
         content: editPost?.content || '',
@@ -91,11 +96,12 @@ const CreatePost = () => {
             if (editPost) {
                 await postService.updatePost(editPost._id, formData);
                 toast.success('Post updated successfully!');
+                navigate('/feed');
             } else {
-                await postService.createPost(formData);
-                toast.success('Post created successfully!');
+                await postService.createPost({ ...formData, journeyId: journeyId || undefined });
+                toast.success(journeyId ? 'Posted to Journey! 🗺️' : 'Post created!');
+                navigate(journeyId ? `/journeys/${journeyId}` : '/feed');
             }
-            navigate('/feed');
         } catch (error) {
             console.error('Error saving post:', error);
             setError(error.response?.data?.message || 'Failed to save post. Please try again.');
@@ -147,13 +153,13 @@ const CreatePost = () => {
                     <Link to="/feed" className="cp-nav-link">
                         <Home className="w-[16px] h-[16px]" /> Home
                     </Link>
-                    <Link to="#" className="cp-nav-link">
+                    <Link to="/explore" className="cp-nav-link">
                         <Search className="w-[16px] h-[16px]" /> Explore
                     </Link>
-                    <Link to="#" className="cp-nav-link">
+                    <Link to="/journeys" className="cp-nav-link">
                         <Map className="w-[16px] h-[16px]" /> Journeys
                     </Link>
-                    <Link to="#" className="cp-nav-link">
+                    <Link to="/saved" className="cp-nav-link">
                         <Bookmark className="w-[16px] h-[16px]" /> Saved
                     </Link>
                     <Link to="/create-post" className="cp-nav-link active">
@@ -185,6 +191,20 @@ const CreatePost = () => {
                                 {selectedMoodEmoji} {selectedMoodLabel}
                             </div>
                         </div>
+
+                        {/* Journey context banner */}
+                        {journeyId && (
+                            <div style={{
+                                display: 'flex', alignItems: 'center', gap: '8px',
+                                background: 'rgba(232, 168, 139, 0.1)', border: '1.5px solid var(--primary, #E8A88B)',
+                                borderRadius: '10px', padding: '10px 14px',
+                                fontSize: '13px', fontWeight: '600', color: 'var(--primary, #E8A88B)',
+                                marginBottom: '4px'
+                            }}>
+                                🗺️ Posting to Journey: <span style={{ fontStyle: 'italic', color: 'var(--text, #F5E6D3)' }}>{journeyTitle || 'Journey'}</span>
+                                <Link to={`/journeys/${journeyId}`} style={{ marginLeft: 'auto', fontSize: '12px', color: '#d48b71' }}>← Back to journey</Link>
+                            </div>
+                        )}
 
                         {error && <div className="cp-error">{error}</div>}
 
@@ -274,39 +294,39 @@ const CreatePost = () => {
                             </div>
                         </div>
                     </form>
+                </main>
 
-                    {/* Side Panel */}
-                    <div className="cp-side-panel">
-                        {/* Mood picker */}
-                        <div className="cp-side-card">
-                            <div className="cp-side-title">How are you feeling?</div>
-                            <div className="cp-mood-grid">
-                                {MOODS.filter(m => m.id !== 'all').map((mood) => (
-                                    <button
-                                        key={mood.id}
-                                        type="button"
-                                        className={`cp-mood-option ${formData.mood === mood.id ? 'selected' : ''}`}
-                                        onClick={() => setFormData({ ...formData, mood: mood.id })}
-                                    >
-                                        {MOOD_EMOJIS[mood.id] || '🙂'} {mood.label}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Kid safe */}
-                        <div className="cp-side-card">
-                            <div className="cp-side-title">Audience</div>
-                            <div 
-                                className="cp-kids-row"
-                                onClick={() => setFormData({ ...formData, kidSafe: !formData.kidSafe })}
-                            >
-                                <div className={`cp-toggle ${formData.kidSafe ? 'on' : ''}`}></div>
-                                <span>Mark as kid-safe</span>
-                            </div>
+                {/* Side Panel */}
+                <div className="cp-side-panel">
+                    {/* Mood picker */}
+                    <div className="cp-side-card">
+                        <div className="cp-side-title">How are you feeling?</div>
+                        <div className="cp-mood-grid">
+                            {MOODS.filter(m => m.id !== 'all').map((mood) => (
+                                <button
+                                    key={mood.id}
+                                    type="button"
+                                    className={`cp-mood-option ${formData.mood === mood.id ? 'selected' : ''}`}
+                                    onClick={() => setFormData({ ...formData, mood: mood.id })}
+                                >
+                                    {MOOD_EMOJIS[mood.id] || '🙂'} {mood.label}
+                                </button>
+                            ))}
                         </div>
                     </div>
-                </main>
+
+                    {/* Kid safe */}
+                    <div className="cp-side-card">
+                        <div className="cp-side-title">Audience</div>
+                        <div 
+                            className="cp-kids-row"
+                            onClick={() => setFormData({ ...formData, kidSafe: !formData.kidSafe })}
+                        >
+                            <div className={`cp-toggle ${formData.kidSafe ? 'on' : ''}`}></div>
+                            <span>Mark as kid-safe</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );

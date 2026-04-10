@@ -11,7 +11,8 @@ import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import postRoutes from './routes/postRoutes.js';
 import commentRoutes from './routes/commentRoutes.js';
-import journeyRoutes from './routes/journeyRoutes.js';
+import focusSessionRoutes from './routes/focusSessionRoutes.js';
+import sharedJourneyRoutes from './routes/sharedJourneyRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 
 // Load environment variables
@@ -51,7 +52,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/comments', commentRoutes);
-app.use('/api/journeys', journeyRoutes);
+app.use('/api/sessions', focusSessionRoutes);  // Focus session timer (was /api/journeys)
+app.use('/api/journeys', sharedJourneyRoutes);  // New shared Journey feature
 app.use('/api/upload', uploadRoutes);
 
 // Health check
