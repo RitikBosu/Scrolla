@@ -129,8 +129,18 @@ const AutoplayVideo = ({ src, poster, aspectRatio, filterLabel, trimStart = 0, t
         '4:3': '4/3',
     };
 
+    // Map aspect ratio → Tailwind aspect-ratio class (clamp 9:16 → 4:5 like Instagram)
+    const ratioClass = {
+        '16:9': 'aspect-video',
+        '1:1':  'aspect-square',
+        '9:16': 'aspect-[4/5]',
+        '4:3':  'aspect-[4/3]',
+        '3:4':  'aspect-[3/4]',
+        '4:5':  'aspect-[4/5]',
+    }[aspectRatio] || 'aspect-video';
+
     return (
-        <div ref={containerRef} className="relative rounded-lg overflow-hidden" style={{ width: '100%', aspectRatio: aspectMap[aspectRatio] || '16/9', maxHeight: '520px', background: '#000' }}>
+        <div ref={containerRef} className={`relative w-full ${ratioClass} overflow-hidden rounded-xl bg-black`}>
             <video
                 ref={videoRef}
                 src={src}
@@ -141,33 +151,53 @@ const AutoplayVideo = ({ src, poster, aspectRatio, filterLabel, trimStart = 0, t
                 preload="metadata"
                 disablePictureInPicture
                 controlsList="nodownload nofullscreen noremoteplayback"
-                className="w-full h-full rounded-lg"
-                style={{
-                    objectFit: 'contain',
-                    display: 'block',
-                    background: '#000',
-                }}
+                className="w-full h-full object-cover object-center block"
             />
             <button
                 onClick={toggleMute}
-                style={{
-                    position: 'absolute', bottom: '12px', right: '12px',
-                    width: '36px', height: '36px', borderRadius: '50%',
-                    background: 'rgba(0,0,0,0.55)', color: 'white',
-                    border: 'none', cursor: 'pointer', backdropFilter: 'blur(4px)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10,
-                }}
+                className="absolute bottom-3 right-3 w-9 h-9 rounded-full bg-black/55 text-white border-none cursor-pointer backdrop-blur flex items-center justify-center z-10"
             >
                 {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
             </button>
             {filterLabel && (
-                <div className="absolute top-2 left-2 flex gap-1">
+                <div className="absolute top-2 left-2">
                     <span className="bg-black/60 text-white text-xs px-2 py-0.5 rounded">🎨 {filterLabel}</span>
                 </div>
             )}
         </div>
     );
 };
+// ─── SmartImage: auto-detects real ratio, clamps like Instagram ───
+// Min ratio: 1.91:1 (landscape cap) | Max ratio: 4:5 (portrait cap)
+const SmartImage = ({ url, cssFilter, roundedClass = 'rounded-xl' }) => {
+    const [paddingTop, setPaddingTop] = useState('100%'); // default square while loading
+
+    const handleLoad = (e) => {
+        const { naturalWidth, naturalHeight } = e.target;
+        if (!naturalWidth || !naturalHeight) return;
+        const ratio = naturalWidth / naturalHeight;
+
+        // Clamp: no wider than 1.91:1, no taller than 9:16
+        const clampedRatio = Math.min(Math.max(ratio, 9 / 16), 1.91);
+        // paddingTop drives the container height: (1/ratio)*100%
+        setPaddingTop(`${(1 / clampedRatio) * 100}%`);
+    };
+
+    return (
+        <div className={`relative w-full overflow-hidden ${roundedClass}`} style={{ paddingTop }}>
+            <img
+                src={url}
+                loading="lazy"
+                onLoad={handleLoad}
+                className="absolute inset-0 w-full h-full object-cover object-center block"
+                style={{ filter: cssFilter !== 'none' ? cssFilter : undefined }}
+                onError={(e) => { e.target.src = 'https://via.placeholder.com/400x300?text=Image+Not+Found'; }}
+            />
+        </div>
+    );
+};
+
+
 const PostCard = ({ post, onUpdate, onDelete, isFollowing: isFollowingProp }) => {
     const { user } = useAuth();
     const navigate = useNavigate();
@@ -199,37 +229,59 @@ const PostCard = ({ post, onUpdate, onDelete, isFollowing: isFollowingProp }) =>
         navigate(`/edit-post/${post._id}`, { state: { post } });
     };
 
-    // ─── Render image ───
-    const renderImage = (image, index) => {
+    // ─── Render image — Instagram accurate ───
+    const renderImage = (image, index, total) => {
         const isStructured = typeof image === 'object' && image !== null;
         const url = isStructured ? image.url : image;
         const filter = isStructured ? image.filter : 'none';
         const aspectRatio = isStructured ? image.aspectRatio : 'original';
         const cssFilter = CSS_FILTERS[filter] || 'none';
-        const aspectMap = { 'original': undefined, '1:1': '1/1', '16:9': '16/9', '4:3': '4/3', '9:16': '9/16' };
+        const isGrid = total > 1;
 
-        const hasCustomRatio = aspectRatio !== 'original';
+        // Grid images: always square crop
+        if (isGrid) {
+            return (
+                <div key={index} className="w-full aspect-square overflow-hidden rounded-sm">
+                    <img
+                        src={url}
+                        alt={`Post image ${index + 1}`}
+                        loading="lazy"
+                        className="w-full h-full object-cover object-center block"
+                        style={{ filter: cssFilter !== 'none' ? cssFilter : undefined }}
+                        onError={(e) => { e.target.src = 'https://via.placeholder.com/400x300?text=Image+Not+Found'; }}
+                    />
+                </div>
+            );
+        }
 
-        return (
-            <div key={index} className="flex justify-center rounded-lg overflow-hidden" style={{ background: hasCustomRatio ? '#000' : undefined }}>
-                <img
-                    src={url}
-                    alt={`Post image ${index + 1}`}
-                    className="rounded-lg"
-                    loading="lazy"
-                    style={{
-                        filter: cssFilter !== 'none' ? cssFilter : undefined,
-                        aspectRatio: aspectMap[aspectRatio],
-                        objectFit: hasCustomRatio ? 'contain' : 'cover',
-                        maxWidth: '100%',
-                        maxHeight: '480px',
-                        width: hasCustomRatio ? '100%' : undefined,
-                        display: 'block',
-                    }}
-                    onError={(e) => { e.target.src = 'https://via.placeholder.com/400x300?text=Image+Not+Found'; }}
-                />
-            </div>
-        );
+        // Single image with a known ratio: lock container, fill with cover
+        const knownRatioClass = {
+            '1:1':  'aspect-square',
+            '4:3':  'aspect-[4/3]',
+            '16:9': 'aspect-video',
+            '9:16': 'aspect-[9/16]', // Allow full vertical length
+            '3:4':  'aspect-[3/4]',
+            '4:5':  'aspect-[4/5]',
+        }[aspectRatio];
+
+        if (knownRatioClass) {
+            return (
+                <div key={index} className={`w-full ${knownRatioClass} overflow-hidden rounded-xl`}>
+                    <img
+                        src={url}
+                        alt={`Post image ${index + 1}`}
+                        loading="lazy"
+                        className="w-full h-full object-cover object-center block"
+                        style={{ filter: cssFilter !== 'none' ? cssFilter : undefined }}
+                        onError={(e) => { e.target.src = 'https://via.placeholder.com/400x300?text=Image+Not+Found'; }}
+                    />
+                </div>
+            );
+        }
+
+        // Single image with NO stored ratio — use SmartImage which auto-detects
+        // real dimensions and clamps between 1.91:1 and 4:5 (exactly like Instagram)
+        return <SmartImage key={index} url={url} cssFilter={cssFilter} />;
     };
 
     // ─── Render video ───
@@ -355,16 +407,33 @@ const PostCard = ({ post, onUpdate, onDelete, isFollowing: isFollowingProp }) =>
             {/* Content */}
             <p className="post-content mb-4 leading-relaxed">{post.content}</p>
 
-            {/* Images */}
-            {post.images && post.images.length > 0 && (
-                <div className={`grid gap-2 mb-4 ${post.images.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
-                    {post.images.map((image, index) => renderImage(image, index))}
-                </div>
-            )}
+            {/* Images — Instagram-style media grid (Tailwind) */}
+            {post.images && post.images.length > 0 && (() => {
+                const count = Math.min(post.images.length, 4);
+                const gridClass = {
+                    1: 'grid grid-cols-1',
+                    2: 'grid grid-cols-2 gap-0.5',
+                    3: 'grid grid-cols-[2fr_1fr] grid-rows-2 gap-0.5',
+                    4: 'grid grid-cols-2 grid-rows-2 gap-0.5',
+                }[count];
+                return (
+                    <div className={`${gridClass} overflow-hidden rounded-xl mb-3`}>
+                        {post.images.slice(0, count).map((image, index) => {
+                            // For 3-image layout first image spans 2 rows
+                            const spanClass = count === 3 && index === 0 ? 'row-span-2' : '';
+                            return (
+                                <div key={index} className={spanClass}>
+                                    {renderImage(image, index, post.images.length)}
+                                </div>
+                            );
+                        })}
+                    </div>
+                );
+            })()}
 
             {/* Videos */}
             {post.videos && post.videos.length > 0 && (
-                <div className="space-y-3 mb-4">
+                <div className="flex flex-col gap-2 mb-3">
                     {post.videos.map((video, index) => renderVideo(video, index))}
                 </div>
             )}

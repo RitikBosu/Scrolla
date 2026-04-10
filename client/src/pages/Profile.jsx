@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
     Edit, UserPlus, UserMinus, MessageSquare, Bell, 
-    Home, Search, Map, Bookmark, User 
+    Home, Search, Map, Bookmark, User, CheckCircle, Loader
 } from 'lucide-react';
 import PostCard from '../components/PostCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { userService } from '../services/userService';
 import { postService } from '../services/postService';
 import { uploadService } from '../services/uploadService';
+import { sharedJourneyService } from '../services/sharedJourneyService';
 import { useAuth } from '../context/AuthContext';
 import './Profile.css';
 
@@ -25,13 +26,30 @@ const Profile = () => {
     const [editForm, setEditForm] = useState({ username: '', bio: '', avatar: null });
     const [uploadPreview, setUploadPreview] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
+    const [journeyHistory, setJourneyHistory] = useState([]);
+    const [journeyHistoryLoading, setJourneyHistoryLoading] = useState(false);
+    const [journeyHistoryLoaded, setJourneyHistoryLoaded] = useState(false);
 
     const isOwnProfile = currentUser?._id === id;
 
     useEffect(() => {
         fetchProfile();
         fetchUserPosts();
+        // Reset journey history when profile changes
+        setJourneyHistory([]);
+        setJourneyHistoryLoaded(false);
     }, [id]);
+
+    // Lazy-load journey history only when tab is opened (own profile only)
+    useEffect(() => {
+        if (activeTab === 'journeys' && isOwnProfile && !journeyHistoryLoaded) {
+            setJourneyHistoryLoading(true);
+            sharedJourneyService.getMine()
+                .then(data => { setJourneyHistory(data); setJourneyHistoryLoaded(true); })
+                .catch(() => {})
+                .finally(() => setJourneyHistoryLoading(false));
+        }
+    }, [activeTab, isOwnProfile, journeyHistoryLoaded]);
 
     const fetchProfile = async () => {
         try {
@@ -205,13 +223,13 @@ const Profile = () => {
                     <Link to="/feed" className="prof-nav-link">
                         <Home className="w-[16px] h-[16px]" /> Home
                     </Link>
-                    <Link to="#" className="prof-nav-link">
+                    <Link to="/explore" className="prof-nav-link">
                         <Search className="w-[16px] h-[16px]" /> Explore
                     </Link>
-                    <Link to="#" className="prof-nav-link">
+                    <Link to="/journeys" className="prof-nav-link">
                         <Map className="w-[16px] h-[16px]" /> Journeys
                     </Link>
-                    <Link to="#" className="prof-nav-link">
+                    <Link to="/saved" className="prof-nav-link">
                         <Bookmark className="w-[16px] h-[16px]" /> Saved
                     </Link>
                     <Link to={`/profile/${currentUser?._id}`} className={`prof-nav-link ${isOwnProfile ? 'active' : ''}`}>
@@ -310,53 +328,112 @@ const Profile = () => {
                         </button>
                     </div>
 
-                    {/* Posts Grid */}
-                    <div className="prof-posts-list">
-                        {posts.length === 0 ? (
-                            <div className="text-center py-12 border border-[#E4E0DA] bg-white rounded-xl">
-                                <p className="text-[#9A9590]">
-                                    {isOwnProfile ? "You haven't posted anything yet" : "No posts yet"}
-                                </p>
-                                {isOwnProfile && (
-                                    <Link to="/create-post" className="prof-btn-primary mt-4 inline-block no-underline">
-                                        Create First Post
+                    {/* Posts tab */}
+                    {activeTab === 'posts' && (
+                        <div className="prof-posts-list">
+                            {posts.length === 0 ? (
+                                <div className="text-center py-12 border border-[#E4E0DA] bg-white rounded-xl">
+                                    <p className="text-[#9A9590]">
+                                        {isOwnProfile ? "You haven't posted anything yet" : "No posts yet"}
+                                    </p>
+                                    {isOwnProfile && (
+                                        <Link to="/create-post" className="prof-btn-primary mt-4 inline-block no-underline">
+                                            Create First Post
+                                        </Link>
+                                    )}
+                                </div>
+                            ) : (
+                                posts.map((post) => (
+                                    <PostCard
+                                        key={post._id}
+                                        post={post}
+                                        onUpdate={fetchUserPosts}
+                                        onDelete={(id) => setPosts(posts.filter(p => p._id !== id))}
+                                        isFollowing={isFollowing}
+                                    />
+                                ))
+                            )}
+                        </div>
+                    )}
+
+                    {/* Journeys history tab */}
+                    {activeTab === 'journeys' && (
+                        <div className="prof-journey-history">
+                            {!isOwnProfile ? (
+                                <div className="prof-journey-private">
+                                    <Map size={32} />
+                                    <p>Journey history is private.</p>
+                                </div>
+                            ) : journeyHistoryLoading ? (
+                                <div className="prof-journey-loading"><Loader size={20} className="spin" /> Loading history...</div>
+                            ) : journeyHistory.length === 0 ? (
+                                <div className="prof-journey-empty">
+                                    <div style={{ fontSize: '40px' }}>🗺️</div>
+                                    <p>No journey history yet.</p>
+                                    <Link to="/journeys" className="prof-btn-primary" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                        Browse Journeys
                                     </Link>
-                                )}
-                            </div>
-                        ) : (
-                            posts.map((post) => (
-                                <PostCard
-                                    key={post._id}
-                                    post={post}
-                                    onUpdate={fetchUserPosts}
-                                    onDelete={(id) => setPosts(posts.filter(p => p._id !== id))}
-                                    isFollowing={isFollowing}
-                                />
-                            ))
-                        )}
-                    </div>
+                                </div>
+                            ) : (
+                                journeyHistory.map((h, i) => (
+                                    <div key={i} className="prof-history-card">
+                                        <div className="prof-history-card-left">
+                                            <div className="prof-history-icon">
+                                                {h.myRole === 'creator' ? '⭐' : '🗺️'}
+                                            </div>
+                                            <div>
+                                                <Link to={`/journeys/${h._id}`} className="prof-history-title hover:underline cursor-pointer" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                                    {h.title}
+                                                </Link>
+                                                <div className="prof-history-prompt">"{h.prompt}"</div>
+                                                <div className="prof-history-meta">
+                                                    <span className={`prof-role-badge ${h.myRole}`}>{h.myRole === 'creator' ? 'Creator' : 'Member'}</span>
+                                                    <span>·</span>
+                                                    <span style={{ color: h.isActive ? '#16a34a' : 'inherit', fontWeight: h.isActive ? 600 : 400 }}>
+                                                        {h.isActive ? '🔴 Live' : 'Ended'}
+                                                    </span>
+                                                    <span>·</span>
+                                                    <span>{h.memberCount} members</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="prof-history-stats">
+                                            <div className="prof-history-stat">
+                                                <span className="prof-history-stat-num">{h.postCount}</span>
+                                                <span className="prof-history-stat-label">total posts</span>
+                                            </div>
+                                            {h.isActive ? (
+                                                <div style={{ width: '16px', height: '16px', borderRadius: '50%', background: '#16a34a', animation: 'pulse 2s infinite' }} />
+                                            ) : (
+                                                <CheckCircle size={16} style={{ color: '#6B7F6E' }} />
+                                            )}
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    )}
                 </main>
 
                 {/* RIGHT SIDEBAR (Static presentation for template completeness) */}
                 <aside className="prof-right">
                     <div className="prof-panel-section">
                         <div className="prof-panel-heading">My Journeys</div>
-                        <div className="prof-journey">
-                            <div className="prof-journey-left">
-                                <div className="prof-journey-name">One Beautiful Thing</div>
-                                <div className="prof-prog"><div className="prof-prog-fill" style={{width: '73%'}}></div></div>
-                                <div className="prof-journey-count">Day 5 of 7</div>
+                        {isOwnProfile && journeyHistory.length > 0 ? (
+                            journeyHistory.slice(0, 3).map((h, i) => (
+                                <Link to={`/journeys/${h._id}`} key={i} className="prof-journey" style={{ textDecoration: 'none' }}>
+                                    <div className="prof-journey-left">
+                                        <div className="prof-journey-name">{h.title}</div>
+                                        <div className="prof-journey-count">{h.memberCount} members · {h.postCount} posts</div>
+                                    </div>
+                                    <span className="prof-journey-time">{h.isActive ? '🔴' : '✅'}</span>
+                                </Link>
+                            ))
+                        ) : (
+                            <div style={{ fontSize: '12px', color: 'var(--prof-muted)', padding: '8px 0' }}>
+                                {isOwnProfile ? <Link to="/journeys" style={{ color: '#6B7F6E', fontWeight: 600 }}>Browse & join journeys →</Link> : 'No journey history.'}
                             </div>
-                            <span className="prof-journey-time">6h left</span>
-                        </div>
-                        <div className="prof-journey">
-                            <div className="prof-journey-left">
-                                <div className="prof-journey-name">Gratitude Week</div>
-                                <div className="prof-prog"><div className="prof-prog-fill" style={{width: '43%'}}></div></div>
-                                <div className="prof-journey-count">Day 3 of 7</div>
-                            </div>
-                            <span className="prof-journey-time">2d left</span>
-                        </div>
+                        )}
                     </div>
 
                     <div className="prof-panel-section">
