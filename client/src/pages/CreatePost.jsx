@@ -10,21 +10,8 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import MediaUpload from '../components/MediaUpload';
 import toast from 'react-hot-toast';
+import BrandLogo from '../components/BrandLogo';
 import './CreatePost.css';
-
-// Mood emojis for the side panel grid
-const MOOD_EMOJIS = {
-    happy: '😄',
-    calm: '😌',
-    excited: '🤩',
-    grateful: '🙏',
-    anxious: '�',
-    sad: '�',
-    angry: '😤',
-    reflective: '🤔',
-    energetic: '⚡',
-    hopeful: '🌈',
-};
 
 const CreatePost = () => {
     const navigate = useNavigate();
@@ -118,14 +105,17 @@ const CreatePost = () => {
         navigate('/login');
     };
 
-    const selectedMoodLabel = MOODS.find(m => m.id === formData.mood)?.label || 'Select mood';
-    const selectedMoodEmoji = MOOD_EMOJIS[formData.mood] || '🙂';
+    const selectedMoodObj = MOODS.find(m => m.id === formData.mood);
+    const selectedMoodLabel = selectedMoodObj?.label || 'Select mood';
+    const selectedMoodEmoji = selectedMoodObj?.emoji || '🙂';
 
     return (
         <div className="cp-page-wrapper">
             {/* NAV */}
             <nav className="cp-nav">
-                <Link to="/feed" className="cp-logo">Scrolla</Link>
+                <Link to="/feed" className="cp-logo">
+                    <BrandLogo size="md" />
+                </Link>
                 <div className="cp-nav-end">
                     <button className="cp-icon-btn" title="Messages">
                         <MessageSquare className="w-[18px] h-[18px]" />
@@ -307,39 +297,39 @@ const CreatePost = () => {
                             </div>
                         </div>
                     </form>
+
+                    {/* Side Panel */}
+                    <div className="cp-side-panel">
+                        {/* Mood picker */}
+                        <div className="cp-side-card">
+                            <div className="cp-side-title">How are you feeling?</div>
+                            <div className="cp-mood-grid">
+                                {MOODS.filter(m => m.id !== 'all').map((mood) => (
+                                    <button
+                                        key={mood.id}
+                                        type="button"
+                                        className={`cp-mood-option ${formData.mood === mood.id ? 'selected' : ''}`}
+                                        onClick={() => setFormData({ ...formData, mood: mood.id })}
+                                    >
+                                        {mood.emoji} {mood.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Kid safe */}
+                        <div className="cp-side-card">
+                            <div className="cp-side-title">Audience</div>
+                            <div 
+                                className="cp-kids-row"
+                                onClick={() => setFormData({ ...formData, kidSafe: !formData.kidSafe })}
+                            >
+                                <div className={`cp-toggle ${formData.kidSafe ? 'active' : ''}`}></div>
+                                <span>Mark as kid-safe</span>
+                            </div>
+                        </div>
+                    </div>
                 </main>
-
-                {/* Side Panel */}
-                <div className="cp-side-panel">
-                    {/* Mood picker */}
-                    <div className="cp-side-card">
-                        <div className="cp-side-title">How are you feeling?</div>
-                        <div className="cp-mood-grid">
-                            {MOODS.filter(m => m.id !== 'all').map((mood) => (
-                                <button
-                                    key={mood.id}
-                                    type="button"
-                                    className={`cp-mood-option ${formData.mood === mood.id ? 'selected' : ''}`}
-                                    onClick={() => setFormData({ ...formData, mood: mood.id })}
-                                >
-                                    {MOOD_EMOJIS[mood.id] || '🙂'} {mood.label}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Kid safe */}
-                    <div className="cp-side-card">
-                        <div className="cp-side-title">Audience</div>
-                        <div 
-                            className="cp-kids-row"
-                            onClick={() => setFormData({ ...formData, kidSafe: !formData.kidSafe })}
-                        >
-                            <div className={`cp-toggle ${formData.kidSafe ? 'on' : ''}`}></div>
-                            <span>Mark as kid-safe</span>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     );

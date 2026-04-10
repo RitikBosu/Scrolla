@@ -670,13 +670,25 @@
   height: 20px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.3);
-  top: 2px;
+  top: 1px;
   left: 2px;
   transition: all 0.2s ease;
+}
+
+[data-theme="light"] .cp-toggle {
+  border-color: rgba(247, 147, 26, 0.4);
+}
+
+[data-theme="light"] .cp-toggle::after {
+  background: rgba(247, 147, 26, 0.4);
 }
 
 .cp-toggle.active::after {
   background: var(--defi-orange-primary);
   transform: translateX(22px);
   box-shadow: 0 0 12px rgba(247, 147, 26, 0.4);
+}
+
+[data-theme="light"] .cp-toggle.active::after {
+  background: var(--defi-orange-primary);
 }

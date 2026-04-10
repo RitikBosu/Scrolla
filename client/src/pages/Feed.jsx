@@ -42,7 +42,8 @@ const Feed = () => {
     const alarmRef = useRef(null);
     const { timeRemaining, isActive, formatTime } = useSessionTimer(
         sessionDuration,
-        showTimeUpAlert
+        showTimeUpAlert,
+        sessionStartTime
     );
 
     const [selectedMood, setSelectedMood] = useState('all');
