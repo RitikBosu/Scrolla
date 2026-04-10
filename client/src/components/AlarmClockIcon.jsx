@@ -161,3 +161,4 @@ const AlarmClockIcon = forwardRef(
 AlarmClockIcon.displayName = 'AlarmClockIcon';
 
 export { AlarmClockIcon };
+export default AlarmClockIcon;

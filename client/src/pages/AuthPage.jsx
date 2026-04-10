@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { FcGoogle } from 'react-icons/fc';
+import { Sun, Moon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import BrandLogo from '../components/BrandLogo';
 import toast from 'react-hot-toast';
 import './AuthPage.css';
 
 const AuthPage = () => {
     const navigate = useNavigate();
+    const { theme, toggleTheme } = useTheme();
     const location = useLocation();
     const { login, register } = useAuth();
     
@@ -104,23 +107,52 @@ const AuthPage = () => {
             <div className="auth-page">
                 {/* LEFT PANEL */}
                 <div className="auth-left-panel">
-                    <div className="auth-left-logo"><BrandLogo size="md" uppercase /></div>
+                    <div className="auth-left-logo"><BrandLogo size="5xl" /></div>
 
                     <div className="auth-left-content">
-                        <div className="auth-left-tagline">A space to scroll<br/>with intention.</div>
-                        <div className="auth-left-sub">Share your mood, join journeys, and connect with people who get it — without the noise.</div>
+                        <div className="auth-left-tagline">
+                            Scroll to what<br/>
+                            <span style={{color: 'var(--auth-orange-primary)'}}>actually</span><br/>
+                            matters.
+                        </div>
+                        <div className="auth-left-sub">A mindful social platform that respects your attention and curates content worth keeping.</div>
                     </div>
 
                     <div className="auth-left-features">
-                        <div className="auth-feature-item"><div className="auth-feature-dot"></div> Mood-based feed filtering</div>
-                        <div className="auth-feature-item"><div className="auth-feature-dot"></div> Time-constrained journeys</div>
-                        <div className="auth-feature-item"><div className="auth-feature-dot"></div> Kids mode built in</div>
-                        <div className="auth-feature-item"><div className="auth-feature-dot"></div> Scroll budget tracker</div>
+                        <div className="auth-feature-item">
+                            <div className="auth-feature-dot">🎯</div> 
+                            Mood-based feed filtering
+                        </div>
+                        <div className="auth-feature-item">
+                            <div className="auth-feature-dot">⏱️</div> 
+                            Scroll budget tracker
+                        </div>
+                        <div className="auth-feature-item">
+                            <div className="auth-feature-dot">🚀</div> 
+                            Journey mode
+                        </div>
+                        <div className="auth-feature-item">
+                            <div className="auth-feature-dot">👶</div> 
+                            Kids mode built in
+                        </div>
                     </div>
                 </div>
 
                 {/* RIGHT PANEL */}
                 <div className="auth-right-panel">
+                    {/* Theme Toggle */}
+                    <button 
+                        className="auth-theme-toggle"
+                        title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                        onClick={toggleTheme}
+                    >
+                        {theme === 'dark' ? (
+                            <Sun className="w-5 h-5" />
+                        ) : (
+                            <Moon className="w-5 h-5" />
+                        )}
+                    </button>
+
                     <div className="auth-form-box">
                         <div className="auth-form-tabs">
                             <button
