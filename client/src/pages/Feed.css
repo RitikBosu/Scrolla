@@ -395,9 +395,9 @@
 
 /* ─── MAIN FEED ─── */
 .feed-main {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  flex: 1;
+  max-width: 720px;
+  padding: 28px 0;
   min-width: 0;
   overflow-y: auto;
   max-height: calc(100vh - 100px);
@@ -1047,7 +1047,6 @@
     height: 20px;
     opacity: 1;
   }
-
   100% {
     width: 100px;
     height: 100px;
@@ -1061,11 +1060,9 @@
     transform: scale(0);
     opacity: 1;
   }
-
   50% {
     transform: scale(1.2);
   }
-
   100% {
     transform: scale(1);
     opacity: 0;

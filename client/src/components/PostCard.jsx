@@ -95,7 +95,7 @@ const AutoplayVideo = ({ src, poster, aspectRatio, filterLabel, trimStart = 0, t
                         if (trimStart > 0 && video.currentTime < trimStart) {
                             video.currentTime = trimStart;
                         }
-                        video.play().catch(() => { });
+                        video.play().catch(() => {});
                     } else {
                         video.pause();
                     }
@@ -133,15 +133,15 @@ const AutoplayVideo = ({ src, poster, aspectRatio, filterLabel, trimStart = 0, t
     // Map aspect ratio → Tailwind aspect-ratio class (clamp 9:16 → 4:5 like Instagram)
     const ratioClass = {
         '16:9': 'aspect-video',
-        '1:1': 'aspect-square',
+        '1:1':  'aspect-square',
         '9:16': 'aspect-[4/5]',
-        '4:3': 'aspect-[4/3]',
-        '3:4': 'aspect-[3/4]',
-        '4:5': 'aspect-[4/5]',
+        '4:3':  'aspect-[4/3]',
+        '3:4':  'aspect-[3/4]',
+        '4:5':  'aspect-[4/5]',
     }[aspectRatio] || 'aspect-video';
 
     return (
-        <div ref={containerRef} className="relative rounded-lg overflow-hidden" style={{ width: '100%', aspectRatio: aspectMap[aspectRatio] || '16/9', background: '#000' }}>
+            <div ref={containerRef} className="relative rounded-lg overflow-hidden" style={{ width: '100%', aspectRatio: aspectMap[aspectRatio] || '16/9', background: '#000' }}>
             <video
                 ref={videoRef}
                 src={src}
@@ -209,7 +209,7 @@ const SmartImage = ({ url, cssFilter, roundedClass = 'rounded-xl' }) => {
 const PostCard = ({ post, onUpdate, onDelete, isFollowing: isFollowingProp }) => {
     const { user } = useAuth();
     const navigate = useNavigate();
-
+    
     const [showComments, setShowComments] = useState(false);
     const [showShareMenu, setShowShareMenu] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
@@ -245,7 +245,7 @@ const PostCard = ({ post, onUpdate, onDelete, isFollowing: isFollowingProp }) =>
         const width = isStructured ? image.width : null;
         const height = isStructured ? image.height : null;
         const cssFilter = CSS_FILTERS[filter] || 'none';
-
+        
         // Smart aspect ratio: use auto-detected or fallback to 4:5 (portrait)
         const smartRatio = getAspectRatio(width, height);
         const ratioMap = { '4/5': '4/5', '1/1': '1/1', '1.91/1': '1.91/1' };
@@ -311,7 +311,7 @@ const PostCard = ({ post, onUpdate, onDelete, isFollowing: isFollowingProp }) =>
     };
 
     return (
-        <motion.div
+        <motion.div 
             className="post-card"
             style={{
                 borderLeft: `4px solid ${getMoodColor()}`
