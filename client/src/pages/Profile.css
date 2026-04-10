@@ -13,103 +13,67 @@
 
 /* ── NAVBAR ── */
 .prof-nav {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
   height: 56px;
   background: var(--prof-surface);
   border-bottom: 1px solid var(--prof-border);
-  display: flex;
-  align-items: center;
+  display: flex; align-items: center;
   padding: 0 28px;
 }
 
 .prof-logo {
   font-family: 'Lora', serif;
-  font-size: clamp(20px, 2.5vw, 28px);
-  font-weight: 600;
-  color: var(--prof-text);
-  letter-spacing: -0.3px;
+  font-size: clamp(20px, 2.5vw, 28px); font-weight: 600;
+  color: var(--prof-text); letter-spacing: -0.3px;
   text-decoration: none;
 }
 
 .prof-nav-end {
   margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 2px;
+  display: flex; align-items: center; gap: 2px;
 }
 
 .prof-icon-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--prof-muted);
-  transition: all .15s;
-  position: relative;
+  width: 36px; height: 36px; border-radius: 8px;
+  border: none; background: transparent;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  color: var(--prof-muted); transition: all .15s; position: relative;
 }
 
-.prof-icon-btn:hover {
-  background: var(--prof-border);
-  color: var(--prof-text);
+.prof-icon-btn:hover { 
+  background: var(--prof-border); 
+  color: var(--prof-text); 
 }
 
-.prof-icon-btn svg {
-  width: 18px;
-  height: 18px;
-  stroke: currentColor;
-  fill: none;
-  stroke-width: 1.6;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+.prof-icon-btn svg { 
+  width: 18px; height: 18px; 
+  stroke: currentColor; fill: none; stroke-width: 1.6; 
+  stroke-linecap: round; stroke-linejoin: round; 
 }
 
 .prof-notif-dot {
-  position: absolute;
-  top: 7px;
-  right: 7px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--defi-orange-primary);
-  border: 1.5px solid var(--prof-surface);
+  position: absolute; top: 7px; right: 7px;
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--defi-orange-primary); border: 1.5px solid var(--prof-surface);
 }
 
-.prof-nav-divider {
-  width: 1px;
-  height: 20px;
-  background: var(--prof-border);
-  margin: 0 8px;
+.prof-nav-divider { 
+  width: 1px; height: 20px; 
+  background: var(--prof-border); 
+  margin: 0 8px; 
 }
 
 .prof-avatar-sm {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: var(--defi-orange-primary);
-  color: white;
-  font-size: 13px;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  margin-left: 6px;
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--defi-orange-primary); color: white;
+  font-size: 13px; font-weight: 500;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; margin-left: 6px;
   overflow: hidden;
 }
 
 .prof-avatar-sm img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  width: 100%; height: 100%; object-fit: cover;
 }
 
 /* ── LAYOUT ── */
@@ -637,7 +601,6 @@
     opacity: 0;
     backdrop-filter: blur(0px);
   }
-
   to {
     opacity: 1;
     backdrop-filter: blur(5px);
@@ -671,7 +634,6 @@
     transform: translate(-50%, -40%);
     scale: 0.95;
   }
-
   to {
     opacity: 1;
     transform: translate(-50%, -50%);
@@ -733,7 +695,6 @@
     scale: 0.9;
     opacity: 0;
   }
-
   to {
     scale: 1;
     opacity: 1;
@@ -989,12 +950,9 @@
 }
 
 @keyframes pulse {
-
-  0%,
-  100% {
+  0%, 100% {
     box-shadow: 0 2px 8px rgba(255, 107, 53, 0.4);
   }
-
   50% {
     box-shadow: 0 2px 12px rgba(255, 107, 53, 0.7);
   }
@@ -1304,13 +1262,8 @@
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .prof-edit-modal {
@@ -1335,7 +1288,6 @@
     opacity: 0;
     transform: translate(-50%, -40%);
   }
-
   to {
     opacity: 1;
     transform: translate(-50%, -50%);
