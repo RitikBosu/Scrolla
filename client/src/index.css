@@ -6,14 +6,14 @@
   --bg-light: #2D2420;
   --text: #F5E6D3;
   --text-muted: #C4B5A0;
-  
+
   /* Mood Colors */
   --mood-calm: #7BA8CC;
   --mood-focused: #E8A88B;
   --mood-reflective: #A8C9A8;
   --mood-joyful: #F4D89F;
   --mood-energetic: #E8C76A;
-  
+
   /* Legacy vars for compatibility */
   --scrolla-bg: #1A1410;
   --scrolla-surface: #2D2420;
@@ -33,14 +33,14 @@
   --bg-light: #F0EDE7;
   --text: #3D2F28;
   --text-muted: #8B7D73;
-  
+
   /* Mood Colors */
   --mood-calm: #7BA8CC;
   --mood-focused: #E8A88B;
   --mood-reflective: #A8C9A8;
   --mood-joyful: #F4D89F;
   --mood-energetic: #E8C76A;
-  
+
   /* Legacy vars for compatibility */
   --scrolla-bg: #F9F5F0;
   --scrolla-surface: #F0EDE7;
@@ -82,23 +82,57 @@ body {
     /* Better scaling for fullscreen: 18px on mobile → 22px on large screens */
     font-size: clamp(18px, 1.2vw + 14px, 22px);
   }
-  
+
   body {
     font-size: 1rem;
     line-height: 1.6;
   }
-  
+
   /* Heading sizes */
-  h1 { font-size: clamp(2rem, 4vw, 3.5rem); line-height: 1.2; font-weight: 700; }
-  h2 { font-size: clamp(1.75rem, 3.5vw, 3rem); line-height: 1.2; font-weight: 700; }
-  h3 { font-size: clamp(1.5rem, 3vw, 2.5rem); line-height: 1.3; font-weight: 600; }
-  h4 { font-size: clamp(1.25rem, 2.5vw, 2rem); line-height: 1.4; font-weight: 600; }
-  h5 { font-size: clamp(1.125rem, 2vw, 1.75rem); line-height: 1.4; font-weight: 600; }
-  h6 { font-size: clamp(1rem, 1.5vw, 1.5rem); line-height: 1.5; font-weight: 600; }
-  
+  h1 {
+    font-size: clamp(2rem, 4vw, 3.5rem);
+    line-height: 1.2;
+    font-weight: 700;
+  }
+
+  h2 {
+    font-size: clamp(1.75rem, 3.5vw, 3rem);
+    line-height: 1.2;
+    font-weight: 700;
+  }
+
+  h3 {
+    font-size: clamp(1.5rem, 3vw, 2.5rem);
+    line-height: 1.3;
+    font-weight: 600;
+  }
+
+  h4 {
+    font-size: clamp(1.25rem, 2.5vw, 2rem);
+    line-height: 1.4;
+    font-weight: 600;
+  }
+
+  h5 {
+    font-size: clamp(1.125rem, 2vw, 1.75rem);
+    line-height: 1.4;
+    font-weight: 600;
+  }
+
+  h6 {
+    font-size: clamp(1rem, 1.5vw, 1.5rem);
+    line-height: 1.5;
+    font-weight: 600;
+  }
+
   /* Text sizes */
-  p { font-size: clamp(0.95rem, 1vw, 1.125rem); }
-  small { font-size: clamp(0.85rem, 0.9vw, 0.95rem); }
+  p {
+    font-size: clamp(0.95rem, 1vw, 1.125rem);
+  }
+
+  small {
+    font-size: clamp(0.85rem, 0.9vw, 0.95rem);
+  }
 }
 
 @layer components {
@@ -132,11 +166,11 @@ body {
     border: 1px solid rgba(99, 102, 241, 0.3);
     color: var(--text);
   }
-  
+
   .input-field::placeholder {
     color: rgba(99, 102, 241, 0.5);
   }
-  
+
   .input-field:focus {
     border-color: #EC4899;
     box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.1);
@@ -151,8 +185,7 @@ body {
   }
 
   .post-card {
-    @apply backdrop-blur-xl rounded-2xl shadow-xl transition-all duration-300;
-    padding: 20px;
+    @apply backdrop-blur-xl rounded-2xl shadow-xl p-4 transition-all duration-300 hover:shadow-2xl;
     background: var(--scrolla-card);
     border: 1px solid rgba(247, 147, 26, 0.1);
     animation: fadeUp .35s ease-out both;
@@ -200,7 +233,8 @@ body {
     grid-template-columns: 2fr 1fr;
     grid-template-rows: 1fr 1fr;
   }
-  .post-media-grid.count-3 > *:first-child {
+
+  .post-media-grid.count-3>*:first-child {
     grid-row: 1 / 3;
     border-radius: 4px 0 0 4px;
   }
@@ -238,11 +272,15 @@ body {
   }
 
   /* Input smooth focus states */
-  input, textarea, select {
+  input,
+  textarea,
+  select {
     transition: all 0.2s ease-out;
   }
 
-  input:focus, textarea:focus, select:focus {
+  input:focus,
+  textarea:focus,
+  select:focus {
     outline: none;
     transform: scale(1.01);
   }
@@ -262,6 +300,7 @@ body {
     opacity: 0;
     transform: translateY(16px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -269,18 +308,24 @@ body {
 }
 
 @keyframes heartbeat {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1);
   }
+
   40% {
     transform: scale(1.3);
   }
 }
 
 @keyframes pulseGlow {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 0 0 transparent;
   }
+
   50% {
     box-shadow: 0 0 16px 4px rgba(247, 147, 26, 0.25);
   }
@@ -319,6 +364,7 @@ body {
 .post-action-btn .font-medium {
   font-size: 1.02rem;
 }
+
 @layer utilities {
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
@@ -354,6 +400,7 @@ body {
   0% {
     background-position: -1000px 0;
   }
+
   100% {
     background-position: 1000px 0;
   }
