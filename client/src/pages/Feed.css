@@ -395,9 +395,9 @@
 
 /* ─── MAIN FEED ─── */
 .feed-main {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  flex: 1;
+  max-width: 720px;
+  padding: 28px 0;
   min-width: 0;
   overflow-y: auto;
   max-height: calc(100vh - 100px);
