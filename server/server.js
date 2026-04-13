@@ -20,6 +20,9 @@ dotenv.config();
 
 const app = express();
 
+// Trust proxy for rate limiters since we are behind Render's reverse proxy
+app.set('trust proxy', 1);
+
 // Security middleware
 app.use(helmet());
 
