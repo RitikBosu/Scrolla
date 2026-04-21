@@ -206,7 +206,7 @@ const SmartImage = ({ url, cssFilter, roundedClass = 'rounded-xl' }) => {
 };
 
 
-const PostCard = ({ post, onUpdate, onDelete, isFollowing: isFollowingProp }) => {
+const PostCard = ({ post, onUpdate, onDelete, isFollowing: isFollowingProp, onFollowToggle }) => {
     const { user } = useAuth();
     const navigate = useNavigate();
 
@@ -214,7 +214,7 @@ const PostCard = ({ post, onUpdate, onDelete, isFollowing: isFollowingProp }) =>
     const [showShareMenu, setShowShareMenu] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
 
-    const { isFollowing, toggleFollow: handleFollow, loading: followLoading } = useFollow(isFollowingProp, post?.author?._id);
+    const { isFollowing, toggleFollow: handleFollow, loading: followLoading } = useFollow(isFollowingProp, post?.author?._id, onFollowToggle);
     const { liked, likeCount, toggleLike: handleLike } = useLike(post?.isLiked, post?.likeCount, post?._id);
     const { handleSave, handleHide, handleReport, handleDelete } = usePostActions(post?._id, onUpdate, onDelete);
 

@@ -51,10 +51,29 @@ const Feed = () => {
 
     const { activeMood: selectedMood, setMoodFilter: setSelectedMood } = useMoodFilter();
     const [posts, setPosts] = useState([]);
+    const [communityPosts, setCommunityPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [journeyComplete, setJourneyComplete] = useState(false);
     const [activeTab, setActiveTab] = useState('foryou');
     const [unreadNotifCount, setUnreadNotifCount] = useState(0);
+
+    const WelcomeCard = () => (
+        <div style={{background:'var(--defi-surface)', border:'1px solid rgba(255, 255, 255, 0.08)', borderRadius:'14px', padding:'24px', marginBottom:'24px', textAlign:'center'}}>
+            <h2 style={{color:'var(--defi-fg)', fontSize:'1.2rem', marginBottom:'16px', fontWeight:'700'}}>Welcome to Scrolla! 🎉</h2>
+            <p style={{color:'var(--defi-muted)', marginBottom:'24px'}}>Your feed is empty because you aren't following anyone yet. Let's fix that!</p>
+            <div style={{display:'flex', flexDirection:'column', gap:'12px'}}>
+                <button onClick={handleExploreClick} className="feed-compose-btn" style={{width:'100%', padding:'12px', textAlign:'center'}}>
+                    Follow a few people
+                </button>
+                <button onClick={() => navigate('/journeys')} className="feed-compose-btn" style={{width:'100%', padding:'12px', background:'transparent', border:'1px solid rgba(247, 147, 26, 0.4)', color:'var(--defi-orange-primary)', textAlign:'center'}}>
+                    Join a Journey
+                </button>
+                <button onClick={() => navigate('/create-post')} className="feed-compose-btn" style={{width:'100%', padding:'12px', background:'transparent', border:'1px solid rgba(247, 147, 26, 0.4)', color:'var(--defi-orange-primary)', textAlign:'center'}}>
+                    Make your first post
+                </button>
+            </div>
+        </div>
+    );
 
     // Animation variants
     const pageVariants = {
@@ -152,25 +171,56 @@ const Feed = () => {
                 filters.kidSafe = 'true';
             }
 
-            // "For you" / Home = following only, "Explore" = all posts
-            if (activeTab === 'foryou') {
-                filters.following = 'true';
-            }
-            // "following" tab also shows followed users
-            if (activeTab === 'following') {
-                filters.following = 'true';
-            }
-            // "trending" and "journeys" tabs = all posts (explore)
-
             filters.limit = 50;
+            
+            let currentFollowingIds = followingIds;
+            if (user?._id && followingIds.size === 0) {
+                try {
+                    const following = await userService.getFollowing(user._id);
+                    currentFollowingIds = new Set(following.map(u => u._id));
+                    setFollowingIds(currentFollowingIds);
+                } catch (err) {
+                    console.error('Error fetching following list:', err);
+                }
+            }
 
-            const data = await postService.getPosts(filters);
-            const allPosts = data.posts || [];
-            // Don't show current user's own posts in the feed — only on their profile
-            setPosts(allPosts.filter(p => p.author?._id !== user?._id));
+            let mainPosts = [];
+            let extraPosts = [];
+
+            if (activeTab === 'foryou') {
+                if (currentFollowingIds.size === 0) {
+                    const data = await postService.getPosts(filters);
+                    extraPosts = data.posts || [];
+                } else {
+                    const data = await postService.getPosts({ ...filters, following: 'true' });
+                    mainPosts = data.posts || [];
+
+                    if (mainPosts.length < 5) {
+                        const allData = await postService.getPosts(filters);
+                        extraPosts = allData.posts || [];
+                    }
+                }
+            } else if (activeTab === 'following') {
+                const data = await postService.getPosts({ ...filters, following: 'true' });
+                mainPosts = data.posts || [];
+            } else {
+                const data = await postService.getPosts(filters);
+                mainPosts = data.posts || [];
+            }
+
+            mainPosts = mainPosts.filter(p => p.author?._id !== user?._id);
+            extraPosts = extraPosts.filter(p => 
+                p.author?._id !== user?._id && 
+                !mainPosts.some(fp => fp._id === p._id) &&
+                !currentFollowingIds.has(p.author?._id)
+            );
+
+            setPosts(mainPosts);
+            setCommunityPosts(extraPosts);
         } catch (error) {
             console.error('Error fetching posts:', error);
             setPosts([]);
+            setCommunityPosts([]);
         } finally {
             setLoading(false);
         }
@@ -423,38 +473,109 @@ const Feed = () => {
                                     <SkeletonPostCard />
                                     <SkeletonPostCard />
                                 </>
-                            ) : posts.length === 0 ? (
-                                <div style={{background:'white', border:'1px solid #E4E0DA', borderRadius:'12px', textAlign:'center', padding:'48px 16px'}}>
-                                    <p style={{color:'#9A9590', marginBottom:'16px'}}>
-                                        {activeTab === 'foryou' || activeTab === 'following'
-                                            ? "You're not following anyone yet. Explore posts and follow users!"
-                                            : kidsMode
-                                                ? 'No kid-safe posts found matching your mood.'
-                                                : 'No posts yet for this mood. Be the first to create one!'}
-                                    </p>
-                                    {(activeTab === 'foryou' || activeTab === 'following') && (
-                                        <button
-                                            onClick={handleExploreClick}
-                                            style={{padding:'10px 20px', borderRadius:'8px', border:'none', background:'#6B7F6E', color:'white', fontSize:'14px', fontWeight:'500', cursor:'pointer'}}
-                                        >
-                                            Explore Posts
-                                        </button>
-                                    )}
-                                </div>
                             ) : (
-                                posts.map((post) => (
-                                    <motion.div
-                                        key={post._id}
-                                        variants={itemVariants}
-                                    >
-                                        <PostCard 
-                                            post={post} 
-                                            onUpdate={fetchPosts} 
-                                            onDelete={fetchPosts} 
-                                            isFollowing={followingIds.has(post.author?._id)}
-                                        />
-                                    </motion.div>
-                                ))
+                                <>
+                                    {/* Welcome Card if not following anyone and on foryou/following tab */}
+                                    {(activeTab === 'foryou' || activeTab === 'following') && followingIds.size === 0 && (
+                                        <WelcomeCard />
+                                    )}
+
+                                    {/* Main posts */}
+                                    {posts.length > 0 && posts.map((post) => (
+                                        <motion.div key={post._id} variants={itemVariants}>
+                                            <PostCard 
+                                                post={post} 
+                                                onUpdate={fetchPosts} 
+                                                onDelete={fetchPosts} 
+                                                isFollowing={followingIds.has(post.author?._id)}
+                                                onFollowToggle={(isFollowing, userId) => {
+                                                    if (isFollowing) {
+                                                        setFollowingIds(prev => new Set([...prev, userId]));
+                                                        setSuggestedUsers(prev => prev.filter(u => u._id !== userId));
+                                                    } else {
+                                                        const newSet = new Set(followingIds);
+                                                        newSet.delete(userId);
+                                                        setFollowingIds(newSet);
+                                                    }
+                                                    if (activeTab === 'foryou' || activeTab === 'following') {
+                                                        fetchPosts();
+                                                    }
+                                                }}
+                                            />
+                                        </motion.div>
+                                    ))}
+
+                                    {/* Empty state if absolutely no posts to show */}
+                                    {posts.length === 0 && communityPosts.length === 0 && followingIds.size > 0 && (
+                                        <div style={{background:'var(--defi-surface)', border:'1px solid rgba(255, 255, 255, 0.08)', borderRadius:'14px', textAlign:'center', padding:'48px 16px'}}>
+                                            <p style={{color:'var(--defi-muted)', marginBottom:'16px'}}>
+                                                {activeTab === 'foryou' || activeTab === 'following'
+                                                    ? selectedMood !== 'all' 
+                                                        ? `No posts from people you follow match the "${selectedMood}" mood. Try changing it!`
+                                                        : "You're not following anyone yet, or they haven't posted. Explore posts and follow users!"
+                                                    : kidsMode
+                                                        ? 'No kid-safe posts found matching your mood.'
+                                                        : 'No posts yet for this mood. Be the first to create one!'}
+                                            </p>
+                                            {(activeTab === 'foryou' || activeTab === 'following') && (
+                                                <button
+                                                    onClick={handleExploreClick}
+                                                    className="feed-compose-btn"
+                                                    style={{padding:'10px 20px', fontSize:'14px'}}
+                                                >
+                                                    Explore Posts
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Community Filler Posts */}
+                                    {communityPosts.length > 0 && activeTab === 'foryou' && (
+                                        <>
+                                            {posts.length > 0 && (
+                                                <div style={{
+                                                    textAlign: 'center', 
+                                                    margin: '32px 0 24px', 
+                                                    display: 'flex', 
+                                                    alignItems: 'center', 
+                                                    gap: '16px',
+                                                    color: 'var(--defi-muted)',
+                                                    fontSize: '0.9rem',
+                                                    fontWeight: '600',
+                                                    textTransform: 'uppercase',
+                                                    letterSpacing: '0.05em'
+                                                }}>
+                                                    <div style={{flex: 1, height: '1px', background: 'rgba(255, 255, 255, 0.08)'}} />
+                                                    More from the community
+                                                    <div style={{flex: 1, height: '1px', background: 'rgba(255, 255, 255, 0.08)'}} />
+                                                </div>
+                                            )}
+                                            {communityPosts.map((post) => (
+                                                <motion.div key={post._id} variants={itemVariants}>
+                                                    <PostCard 
+                                                        post={post} 
+                                                        onUpdate={fetchPosts} 
+                                                        onDelete={fetchPosts} 
+                                                        isFollowing={followingIds.has(post.author?._id)}
+                                                        onFollowToggle={(isFollowing, userId) => {
+                                                            if (isFollowing) {
+                                                                setFollowingIds(prev => new Set([...prev, userId]));
+                                                                setSuggestedUsers(prev => prev.filter(u => u._id !== userId));
+                                                            } else {
+                                                                const newSet = new Set(followingIds);
+                                                                newSet.delete(userId);
+                                                                setFollowingIds(newSet);
+                                                            }
+                                                            if (activeTab === 'foryou' || activeTab === 'following') {
+                                                                fetchPosts();
+                                                            }
+                                                        }}
+                                                    />
+                                                </motion.div>
+                                            ))}
+                                        </>
+                                    )}
+                                </>
                             )}
                         </motion.div>
                 </main>

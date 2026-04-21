@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { userService } from '../services/userService';
 
-export const useFollow = (initialIsFollowing = false, userId) => {
+export const useFollow = (initialIsFollowing = false, userId, onToggle) => {
     const [isFollowing, setIsFollowing] = useState(initialIsFollowing);
     const [loading, setLoading] = useState(false);
 
@@ -18,9 +18,11 @@ export const useFollow = (initialIsFollowing = false, userId) => {
             if (isFollowing) {
                 await userService.unfollowUser(userId);
                 setIsFollowing(false);
+                if (onToggle) onToggle(false, userId);
             } else {
                 await userService.followUser(userId);
                 setIsFollowing(true);
+                if (onToggle) onToggle(true, userId);
             }
         } catch (err) {
             console.error('Follow/unfollow error:', err);

@@ -4,9 +4,10 @@ import {
     Edit, UserPlus, UserMinus,
     Home, Search, Map, Bookmark, User, Sun, Moon, Bell,
     ChevronLeft, ChevronRight, Play, Heart, MessageCircle, Send, X,
-    Compass, PlusSquare
+    Compass, PlusSquare, MoreVertical
 } from 'lucide-react';
 import PostCard from '../components/PostCard';
+import ThreeDotMenu from '../components/ThreeDotMenu';
 import LoadingSpinner from '../components/LoadingSpinner';
 import BrandLogo from '../components/BrandLogo';
 import { userService } from '../services/userService';
@@ -42,9 +43,10 @@ const Profile = () => {
     const [currentPostIndex, setCurrentPostIndex] = useState(null);
     const [commentText, setCommentText] = useState('');
     const [liked, setLiked] = useState(false);
+    const [showMenu, setShowMenu] = useState(false);
     const modalRef = useRef(null);
 
-    const isOwnProfile = currentUser?._id === id;
+    const isOwnProfile = String(currentUser?._id) === String(id);
 
     // Sync tab from URL param when navigating (e.g. ?tab=saved)
     useEffect(() => {
@@ -734,7 +736,7 @@ const Profile = () => {
                         {/* Right Section - Caption, Likes, Comments */}
                         <div className="prof-modal-content-section">
                             {/* Header */}
-                            <div className="prof-modal-header-section">
+                            <div className="prof-modal-header-section" style={{ paddingRight: '56px' }}>
                                 <div className="prof-modal-user-info">
                                     <img 
                                         src={profile?.avatar || '/avatar.png'} 
@@ -752,6 +754,53 @@ const Profile = () => {
                                     <button className="prof-follow-btn">
                                         {isFollowing ? 'Following' : 'Follow'}
                                     </button>
+                                )}
+                                {isOwnProfile && (
+                                    <div className="relative">
+                                        <button
+                                            onClick={() => setShowMenu(!showMenu)}
+                                            style={{
+                                                background: 'none',
+                                                border: 'none',
+                                                cursor: 'pointer',
+                                                padding: '8px',
+                                                color: '#A8A5A0',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                borderRadius: '50%',
+                                                transition: 'background-color 0.2s ease'
+                                            }}
+                                            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'}
+                                            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                        >
+                                            <MoreVertical size={20} />
+                                        </button>
+                                        {showMenu && (
+                                            <div style={{ position: 'absolute', right: 0, top: '100%', zIndex: 100 }}>
+                                                <ThreeDotMenu
+                                                    isOwnPost={true}
+                                                    onEdit={() => {
+                                                        navigate(`/edit-post/${expandedPost._id}`, { state: { post: expandedPost } });
+                                                        closeModal();
+                                                    }}
+                                                    onDelete={async () => {
+                                                        if (window.confirm('Are you sure you want to delete this post?')) {
+                                                            try {
+                                                                await postService.deletePost(expandedPost._id);
+                                                                alert('Post deleted!');
+                                                                closeModal();
+                                                                fetchUserPosts();
+                                                            } catch (error) {
+                                                                console.error('Error deleting post:', error);
+                                                            }
+                                                        }
+                                                    }}
+                                                    onClose={() => setShowMenu(false)}
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
                                 )}
                             </div>
 
