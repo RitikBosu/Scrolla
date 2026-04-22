@@ -553,7 +553,7 @@ const Feed = () => {
                         <div className="feed-panel-heading">Suggested</div>
                         {suggestedUsers.length > 0 ? (
                             <div className="feed-suggest-container">
-                                {suggestedUsers.map(sUser => (
+                                {suggestedUsers.slice(0, 3).map(sUser => (
                                     <div className="feed-suggest" key={sUser._id}>
                                         <div 
                                             className="feed-sug-avatar" 

@@ -848,12 +848,16 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
 }
 
 .feed-sug-name {
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--defi-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 [data-theme="light"] .feed-sug-name {
