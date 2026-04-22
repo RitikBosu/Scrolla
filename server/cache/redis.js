@@ -6,10 +6,13 @@ const redis = new Redis(redisUrl, {
   retryStrategy: (times) => Math.min(times * 100, 3000),
   enableOfflineQueue: false,
   lazyConnect: true,
+  tls: {
+    rejectUnauthorized: false
+  }
 });
 
 redis.on('connect', () => console.log('✅ Redis connected'));
-redis.on('error', (err) => console.error('⚠️ Redis error (non-fatal):', err.message));
+redis.on('error', (err) => console.error('⚠️ Redis error (non-fatal):', err.message || err));
 
 try {
   await redis.connect();
