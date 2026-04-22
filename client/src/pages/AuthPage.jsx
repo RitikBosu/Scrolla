@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { FcGoogle } from 'react-icons/fc';
 import { Sun, Moon } from 'lucide-react';
-import { GoogleLogin } from '@react-oauth/google';
+import { useGoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import BrandLogo from '../components/BrandLogo';
@@ -247,6 +247,13 @@ const AuthPage = () => {
         toast.error('Google login failed');
     };
 
+    const loginGoogle = useGoogleLogin({
+        onSuccess: (tokenResponse) => {
+            handleGoogleSuccess({ credential: tokenResponse.access_token });
+        },
+        onError: handleGoogleError
+    });
+
     return (
         <div className="auth-page-wrapper">
             <div className="auth-page">
@@ -356,13 +363,14 @@ const AuthPage = () => {
                                 <div className="auth-divider">or</div>
 
                                 <div className="auth-google-login">
-                                    <GoogleLogin
-                                        onSuccess={handleGoogleSuccess}
-                                        onError={handleGoogleError}
-                                        text="signin_with"
-                                        logo_alignment="center"
-                                        width="100%"
-                                    />
+                                    <button 
+                                        type="button" 
+                                        className="auth-custom-google-btn" 
+                                        onClick={() => loginGoogle()}
+                                    >
+                                        <FcGoogle size={22} />
+                                        <span>Continue with Google</span>
+                                    </button>
                                 </div>
 
                                 <div className="auth-form-footer">
@@ -438,13 +446,14 @@ const AuthPage = () => {
                                 <div className="auth-divider">or</div>
 
                                 <div className="auth-google-login">
-                                    <GoogleLogin
-                                        onSuccess={handleGoogleSuccess}
-                                        onError={handleGoogleError}
-                                        text="signup_with"
-                                        logo_alignment="center"
-                                        width="100%"
-                                    />
+                                    <button 
+                                        type="button" 
+                                        className="auth-custom-google-btn" 
+                                        onClick={() => loginGoogle()}
+                                    >
+                                        <FcGoogle size={22} />
+                                        <span>Continue with Google</span>
+                                    </button>
                                 </div>
 
                                 <div className="auth-form-footer">
