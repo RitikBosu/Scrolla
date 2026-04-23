@@ -4,7 +4,7 @@ import { AppProvider } from './context/AppContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { MoodFilterProvider } from './context/MoodFilterContext';
 
-import Navbar from './components/Navbar';
+
 import ProtectedRoute from './components/ProtectedRoute';
 import AuthPage from './pages/AuthPage';
 import Feed from './pages/Feed';
@@ -23,7 +23,7 @@ function App() {
                 <MoodFilterProvider>
                     <Router>
                     <div className="min-h-screen">
-                        <Navbar />
+
                         <Routes>
                             {/* Public Routes */}
                             <Route path="/login" element={<AuthPage />} />
@@ -106,8 +106,7 @@ function App() {
                             />
 
                             {/* Default Redirect */}
-                            <Route path="/explore" element={<Navigate to="/feed" replace />} />
-                            <Route path="/saved" element={<Navigate to="/feed" replace />} />
+
                             <Route path="/" element={<Navigate to="/feed" replace />} />
                             <Route path="*" element={<Navigate to="/feed" replace />} />
                         </Routes>

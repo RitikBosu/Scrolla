@@ -506,13 +506,13 @@ export default function JourneyDiscover() {
                     <Link to="/feed" className="jd-sidebar-item">
                         <Home size={22} /><span>Home</span>
                     </Link>
-                    <Link to="/feed" className="jd-sidebar-item">
+                    <Link to="/explore" className="jd-sidebar-item">
                         <Compass size={22} /><span>Explore</span>
                     </Link>
                     <Link to="/journeys" className="jd-sidebar-item jd-sidebar-item--active">
                         <Map size={22} /><span>Journeys</span>
                     </Link>
-                    <Link to="/saved" className="jd-sidebar-item">
+                    <Link to={`/profile/${user?._id}?tab=saved`} className="jd-sidebar-item">
                         <Bookmark size={22} /><span>Saved</span>
                     </Link>
                     <Link to={`/profile/${user?._id}`} className="jd-sidebar-item">
