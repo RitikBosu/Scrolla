@@ -382,9 +382,9 @@ const PostCard = ({ post, onUpdate, onDelete, isFollowing: isFollowingProp, onFo
                             style={{
                                 padding: '4px 14px',
                                 borderRadius: '6px',
-                                border: isFollowing ? '1px solid #8B7D73' : '1px solid #E8A88B',
-                                background: isFollowing ? '#3D3530' : '#E8A88B',
-                                color: isFollowing ? '#C4B5A0' : '#1A1410',
+                                border: isFollowing ? '1px solid var(--color-border-medium)' : '1px solid var(--color-accent-primary)',
+                                background: isFollowing ? 'var(--color-bg-tertiary)' : 'var(--color-accent-primary)',
+                                color: isFollowing ? 'var(--color-text-secondary)' : 'var(--color-text-inverse)',
                                 fontSize: '14px',
                                 fontWeight: '500',
                                 cursor: followLoading ? 'not-allowed' : 'pointer',
@@ -460,7 +460,7 @@ const PostCard = ({ post, onUpdate, onDelete, isFollowing: isFollowingProp, onFo
             <div className="post-divider flex items-center gap-6 pt-4 border-t">
                 <motion.button
                     onClick={(e) => handleLikeWithRipple(handleLike, e)}
-                    className="post-action-btn like-button flex items-center gap-2 hover:text-red-400 transition-colors group relative"
+                    className="post-action-btn like-button flex items-center gap-2 hover:text-[var(--color-accent-danger)] transition-colors group relative"
                     whileTap={{ scale: 1.8 }}
                     animate={{
                         scale: liked ? [1, 1.3, 1] : 1,
@@ -482,7 +482,7 @@ const PostCard = ({ post, onUpdate, onDelete, isFollowing: isFollowingProp, onFo
 
                 <button
                     onClick={() => setShowComments(!showComments)}
-                    className="post-action-btn flex items-center gap-2 hover:text-blue-400 transition-colors"
+                    className="post-action-btn flex items-center gap-2 hover:text-[var(--color-accent-info)] transition-colors"
                 >
                     <MessageCircle className="w-5 h-5" />
                     <span className="font-medium">{post.commentCount || 0}</span>
@@ -491,7 +491,7 @@ const PostCard = ({ post, onUpdate, onDelete, isFollowing: isFollowingProp, onFo
                 <div className="relative">
                     <button
                         onClick={() => setShowShareMenu(!showShareMenu)}
-                        className="post-action-btn flex items-center gap-2 hover:text-green-400 transition-colors"
+                        className="post-action-btn flex items-center gap-2 hover:text-[var(--color-accent-success)] transition-colors"
                     >
                         <Share2 className="w-5 h-5" />
                         <span className="font-medium">Share</span>

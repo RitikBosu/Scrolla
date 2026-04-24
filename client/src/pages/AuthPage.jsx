@@ -318,7 +318,7 @@ const AuthPage = () => {
                     <div className="auth-left-content">
                         <div className="auth-left-tagline">
                             Scroll to what<br/>
-                            <span style={{color: 'var(--auth-orange-primary)'}}>actually</span><br/>
+                            <span style={{color: 'var(--color-accent-primary)'}}>actually</span><br/>
                             matters.
                         </div>
                         <div className="auth-left-sub">A mindful social platform that respects your attention and curates content worth keeping.</div>
@@ -434,7 +434,7 @@ const AuthPage = () => {
                                 <div className="auth-form-footer">
                                     <Link to="#">Forgot password?</Link>
                                     &nbsp;·&nbsp;
-                                    No account? <button type="button" onClick={() => handleTabSwitch(false)} className="bg-transparent border-none text-[var(--auth-accent)] font-medium cursor-pointer hover:underline p-0 m-0">Sign up</button>
+                                    No account? <button type="button" onClick={() => handleTabSwitch(false)} className="bg-transparent border-none text-[var(--color-accent-primary)] font-medium cursor-pointer hover:underline p-0 m-0">Sign up</button>
                                 </div>
                             </div>
                         ) : (
@@ -613,14 +613,13 @@ const AuthPage = () => {
             {/* Mood Logger Modal */}
             {showMoodLogger && (
                 <div className="auth-link-modal-overlay" style={{ zIndex: 1000, background: 'rgba(0,0,0,0.8)' }}>
-                    <div className="auth-link-modal" style={{ maxWidth: '420px', background: '#1A1814', color: '#FFF', borderRadius: '16px', padding: '32px 24px', border: '1px solid #333' }} onClick={e => e.stopPropagation()}>
-                        
+                    <div className="auth-link-modal" style={{ maxWidth: '420px', background: 'var(--color-surface-blue)', color: 'var(--color-text-primary)', borderRadius: '16px', padding: '32px 24px', border: '1px solid var(--color-border-light)' }} onClick={e => e.stopPropagation()}>
                         {/* Header */}
                         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
                             <h3 style={{ fontSize: '1.4rem', margin: '0 0 8px 0', fontWeight: 'bold' }}>
                                 Hey {user?.username || 'there'}, how are you feeling?
                             </h3>
-                            <p style={{ color: '#888', margin: 0, fontSize: '0.95rem' }}>Your feed will match your mood</p>
+                            <p style={{ color: 'var(--color-text-secondary)', margin: 0, fontSize: '0.95rem' }}>Your feed will match your mood</p>
                         </div>
 
                         {/* Mood Picker */}
@@ -633,22 +632,21 @@ const AuthPage = () => {
                                         style={{
                                             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                                             padding: '16px 8px', borderRadius: '12px',
-                                            border: `1px solid ${isSelected ? '#F7931A' : '#333'}`,
-                                            background: isSelected ? 'rgba(247, 147, 26, 0.05)' : '#222',
+                                            border: `1px solid ${isSelected ? 'var(--color-accent-primary)' : 'var(--color-border-medium)'}`,
+                                            background: isSelected ? 'var(--color-surface-teal)' : 'var(--color-bg-primary)',
                                             cursor: 'pointer', transition: 'all 0.2s'
                                         }}
                                         onClick={() => setSelectedMood(m.key)}
                                     >
                                         <span style={{ fontSize: '28px', marginBottom: '8px' }}>{m.emoji}</span>
-                                        <span style={{ fontSize: '12px', fontWeight: isSelected ? '600' : '500', color: isSelected ? '#F7931A' : '#888' }}>{m.label}</span>
+                                        <span style={{ fontSize: '12px', fontWeight: isSelected ? '600' : '500', color: isSelected ? 'var(--color-accent-primary)' : 'var(--color-text-secondary)' }}>{m.label}</span>
                                     </button>
                                 );
                             })}
                         </div>
 
-                        {/* Time of day picker */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px', background: '#222', padding: '8px 16px', borderRadius: '12px' }}>
-                            <span style={{ fontSize: '12px', color: '#888', fontWeight: '500' }}>Time of day</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px', background: 'var(--color-bg-secondary)', padding: '8px 16px', borderRadius: '12px' }}>
+                            <span style={{ fontSize: '12px', color: 'var(--color-text-secondary)', fontWeight: '500' }}>Time of day</span>
                             <div style={{ display: 'flex', gap: '8px', flex: 1, justifyContent: 'flex-end' }}>
                                 {['morning', 'afternoon', 'evening', 'night'].map(time => {
                                     const isSelected = timeOfDay === time;
@@ -657,9 +655,9 @@ const AuthPage = () => {
                                             key={time}
                                             style={{
                                                 padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '500',
-                                                border: `1px solid ${isSelected ? '#F7931A' : 'transparent'}`,
-                                                background: isSelected ? 'rgba(247, 147, 26, 0.05)' : 'transparent',
-                                                color: isSelected ? '#F7931A' : '#888',
+                                                border: `1px solid ${isSelected ? 'var(--color-accent-primary)' : 'transparent'}`,
+                                                background: isSelected ? 'var(--color-surface-teal)' : 'transparent',
+                                                color: isSelected ? 'var(--color-accent-primary)' : 'var(--color-text-secondary)',
                                                 cursor: 'pointer'
                                             }}
                                             onClick={() => setTimeOfDay(time)}
@@ -675,8 +673,8 @@ const AuthPage = () => {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             <button
                                 style={{ 
-                                    background: '#222', border: '1px solid #444', padding: '14px', borderRadius: '12px', 
-                                    color: '#FFF', fontWeight: '600', fontSize: '1rem', cursor: 'pointer',
+                                    background: 'var(--color-accent-primary)', border: 'none', padding: '14px', borderRadius: '12px', 
+                                    color: 'var(--color-text-inverse)', fontWeight: '600', fontSize: '1rem', cursor: 'pointer',
                                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                                     opacity: (!selectedMood || savingMood) ? 0.5 : 1
                                 }}
@@ -687,8 +685,8 @@ const AuthPage = () => {
                             </button>
                             <button
                                 style={{ 
-                                    background: 'transparent', border: '1px solid #444', padding: '14px', borderRadius: '12px', 
-                                    color: '#CCC', fontWeight: '500', fontSize: '0.95rem', cursor: 'pointer' 
+                                    background: 'transparent', border: '1px solid var(--color-border-medium)', padding: '14px', borderRadius: '12px', 
+                                    color: 'var(--color-text-secondary)', fontWeight: '500', fontSize: '0.95rem', cursor: 'pointer' 
                                 }}
                                 onClick={handleSkipMood}
                             >

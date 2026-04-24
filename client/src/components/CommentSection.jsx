@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Send, Edit2, Trash2 } from 'lucide-react';
+import { Send, Edit2, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { commentService } from '../services/commentService';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -14,6 +14,9 @@ const CommentSection = ({ postId }) => {
     const [loading, setLoading] = useState(true);
     const [editingId, setEditingId] = useState(null);
     const [editContent, setEditContent] = useState('');
+    const [showAllComments, setShowAllComments] = useState(false);
+    
+    const COMMENTS_TO_SHOW = 3; // Show only top 3 comments by default
 
     useEffect(() => {
         fetchComments();
@@ -21,10 +24,12 @@ const CommentSection = ({ postId }) => {
 
     const fetchComments = async () => {
         try {
+            setLoading(true);
             const data = await commentService.getComments(postId);
-            setComments(data);
+            setComments(data || []);
         } catch (error) {
             console.error('Error fetching comments:', error);
+            setComments([]);
         } finally {
             setLoading(false);
         }
@@ -70,7 +75,16 @@ const CommentSection = ({ postId }) => {
         }
     };
 
-    if (loading) return <LoadingSpinner size="sm" />;
+    if (loading) {
+        return (
+            <div className="flex justify-center py-4">
+                <LoadingSpinner size="sm" />
+            </div>
+        );
+    }
+
+    const commentsToDisplay = showAllComments ? comments : comments.slice(0, COMMENTS_TO_SHOW);
+    const hasMoreComments = comments.length > COMMENTS_TO_SHOW;
 
     return (
         <div className="space-y-4">
@@ -124,89 +138,115 @@ const CommentSection = ({ postId }) => {
                 {comments.length === 0 ? (
                     <p style={{ color: theme === 'light' ? '#666666' : '#a0aec0' }} className="text-center py-4">No comments yet. Be the first to comment!</p>
                 ) : (
-                    comments.map((comment) => (
-                        <div key={comment._id} className="flex gap-3">
-                            <img
-                                src={comment.author.avatar}
-                                alt={comment.author.username}
-                                className="w-10 h-10 rounded-full object-cover"
-                            />
-                            <div className="flex-1">
-                                <div style={{
-                                    backgroundColor: theme === 'light' ? '#ffffff' : '#374151',
-                                    color: theme === 'light' ? '#111827' : '#f3f4f6',
-                                }} className="rounded-lg p-3">
-                                    <div className="flex items-center justify-between mb-1">
-                                        <h4 style={{ color: theme === 'light' ? '#111827' : '#f3f4f6' }} className="font-semibold text-sm">
-                                            {comment.author.username}
-                                        </h4>
-                                        <span style={{ color: theme === 'light' ? '#666666' : '#9ca3af' }} className="text-xs">
-                                            {formatDate(comment.createdAt)}
-                                        </span>
+                    <>
+                        {commentsToDisplay.map((comment) => (
+                            <div key={comment._id} className="flex gap-3">
+                                <img
+                                    src={comment.author.avatar}
+                                    alt={comment.author.username}
+                                    className="w-10 h-10 rounded-full object-cover"
+                                />
+                                <div className="flex-1">
+                                    <div style={{
+                                        backgroundColor: theme === 'light' ? '#ffffff' : '#374151',
+                                        color: theme === 'light' ? '#111827' : '#f3f4f6',
+                                    }} className="rounded-lg p-3">
+                                        <div className="flex items-center justify-between mb-1">
+                                            <h4 style={{ color: theme === 'light' ? '#111827' : '#f3f4f6' }} className="font-semibold text-sm">
+                                                {comment.author.username}
+                                            </h4>
+                                            <span style={{ color: theme === 'light' ? '#666666' : '#9ca3af' }} className="text-xs">
+                                                {formatDate(comment.createdAt)}
+                                            </span>
+                                        </div>
+
+                                        {editingId === comment._id ? (
+                                            <div className="flex gap-2 mt-2">
+                                                <input
+                                                    type="text"
+                                                    value={editContent}
+                                                    onChange={(e) => setEditContent(e.target.value)}
+                                                    style={{
+                                                        backgroundColor: theme === 'light' ? '#f3f4f6' : '#1f2937',
+                                                        color: theme === 'light' ? '#111827' : '#f3f4f6',
+                                                        borderColor: theme === 'light' ? '#d1d5db' : '#4b5563',
+                                                    }}
+                                                    className="flex-1 px-3 py-1 border rounded"
+                                                />
+                                                <button
+                                                    onClick={() => handleEditComment(comment._id)}
+                                                    className="px-3 py-1 bg-blue-500 text-white rounded text-sm"
+                                                >
+                                                    Save
+                                                </button>
+                                                <button
+                                                    onClick={() => setEditingId(null)}
+                                                    style={{
+                                                        backgroundColor: theme === 'light' ? '#e5e7eb' : '#4b5563',
+                                                        color: theme === 'light' ? '#111827' : '#f3f4f6',
+                                                    }}
+                                                    className="px-3 py-1 rounded text-sm"
+                                                >
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <p style={{ color: theme === 'light' ? '#111827' : '#f3f4f6' }} className="text-sm">{comment.content}</p>
+                                        )}
                                     </div>
 
-                                    {editingId === comment._id ? (
-                                        <div className="flex gap-2 mt-2">
-                                            <input
-                                                type="text"
-                                                value={editContent}
-                                                onChange={(e) => setEditContent(e.target.value)}
-                                                style={{
-                                                    backgroundColor: theme === 'light' ? '#f3f4f6' : '#1f2937',
-                                                    color: theme === 'light' ? '#111827' : '#f3f4f6',
-                                                    borderColor: theme === 'light' ? '#d1d5db' : '#4b5563',
-                                                }}
-                                                className="flex-1 px-3 py-1 border rounded"
-                                            />
+                                    {/* Edit/Delete buttons for own comments */}
+                                    {user?._id === comment.author._id && editingId !== comment._id && (
+                                        <div className="flex gap-3 mt-2">
                                             <button
-                                                onClick={() => handleEditComment(comment._id)}
-                                                className="px-3 py-1 bg-blue-500 text-white rounded text-sm"
+                                                onClick={() => {
+                                                    setEditingId(comment._id);
+                                                    setEditContent(comment.content);
+                                                }}
+                                                style={{ color: theme === 'light' ? '#2563eb' : '#60a5fa' }}
+                                                className="text-xs flex items-center gap-1"
                                             >
-                                                Save
+                                                <Edit2 className="w-3 h-3" />
+                                                Edit
                                             </button>
                                             <button
-                                                onClick={() => setEditingId(null)}
-                                                style={{
-                                                    backgroundColor: theme === 'light' ? '#e5e7eb' : '#4b5563',
-                                                    color: theme === 'light' ? '#111827' : '#f3f4f6',
-                                                }}
-                                                className="px-3 py-1 rounded text-sm"
+                                                onClick={() => handleDeleteComment(comment._id)}
+                                                style={{ color: theme === 'light' ? '#dc2626' : '#f87171' }}
+                                                className="text-xs flex items-center gap-1"
                                             >
-                                                Cancel
+                                                <Trash2 className="w-3 h-3" />
+                                                Delete
                                             </button>
                                         </div>
-                                    ) : (
-                                        <p style={{ color: theme === 'light' ? '#111827' : '#f3f4f6' }} className="text-sm">{comment.content}</p>
                                     )}
                                 </div>
-
-                                {/* Edit/Delete buttons for own comments */}
-                                {user?._id === comment.author._id && editingId !== comment._id && (
-                                    <div className="flex gap-3 mt-2">
-                                        <button
-                                            onClick={() => {
-                                                setEditingId(comment._id);
-                                                setEditContent(comment.content);
-                                            }}
-                                            style={{ color: theme === 'light' ? '#2563eb' : '#60a5fa' }}
-                                            className="text-xs flex items-center gap-1"
-                                        >
-                                            <Edit2 className="w-3 h-3" />
-                                            Edit
-                                        </button>
-                                        <button
-                                            onClick={() => handleDeleteComment(comment._id)}
-                                            style={{ color: theme === 'light' ? '#dc2626' : '#f87171' }}
-                                            className="text-xs flex items-center gap-1"
-                                        >
-                                            <Trash2 className="w-3 h-3" />
-                                            Delete
-                                        </button>
-                                    </div>
-                                )}
                             </div>
-                        </div>
-                    ))
+                        ))}
+
+                        {/* View More/Less Button */}
+                        {hasMoreComments && (
+                            <button
+                                onClick={() => setShowAllComments(!showAllComments)}
+                                style={{
+                                    color: '#3b82f6',
+                                    backgroundColor: theme === 'light' ? '#eff6ff' : '#1e3a8a'
+                                }}
+                                className="w-full py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors hover:opacity-80"
+                            >
+                                {showAllComments ? (
+                                    <>
+                                        <ChevronUp className="w-4 h-4" />
+                                        Show Less ({COMMENTS_TO_SHOW} of {comments.length})
+                                    </>
+                                ) : (
+                                    <>
+                                        <ChevronDown className="w-4 h-4" />
+                                        View All Comments ({comments.length})
+                                    </>
+                                )}
+                            </button>
+                        )}
+                    </>
                 )}
             </div>
         </div>

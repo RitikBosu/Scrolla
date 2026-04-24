@@ -25,7 +25,7 @@
   top: 0;
   width: 280px;
   height: 100vh;
-  background: var(--defi-bg-elevated, #0F1115);
+  background: var(--color-surface-blue);
   border-right: 1px solid rgba(255, 255, 255, 0.07);
   display: flex;
   flex-direction: column;
@@ -469,9 +469,9 @@
 }
 
 .prof-stat-value {
-  font-size: 1.75rem;
+  font-size: var(--font-size-2xl);
   font-weight: 600;
-  color: var(--defi-orange-primary);
+  color: var(--color-text-primary);
   display: block;
 }
 
@@ -511,7 +511,7 @@
 }
 
 .prof-btn-primary {
-  background: var(--defi-orange-primary);
+  background: var(--color-accent-primary);
   color: white;
 }
 
@@ -1064,11 +1064,12 @@
 
 /* Comments Section */
 .prof-modal-comments {
-  padding: 12px 16px;
+  padding: 16px;
   flex: 1;
   overflow-y: auto;
-  min-height: 100px;
+  min-height: 120px;
   background: var(--prof-surface);
+  border-top: 1px solid var(--prof-border);
 }
 
 .prof-comments-list {
@@ -1079,20 +1080,55 @@
 
 .prof-comment-item {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   font-size: 0.9rem;
+  align-items: flex-start;
+}
+
+.prof-comment-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.prof-comment-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
 }
 
 .prof-comment-item strong {
   color: var(--prof-text);
-  flex-shrink: 0;
-  min-width: fit-content;
   font-weight: 600;
+  font-size: 0.85rem;
 }
 
 .prof-comment-item span {
   color: var(--prof-text);
   word-break: break-word;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.prof-view-all-comments-btn {
+  background: rgba(51, 200, 232, 0.1);
+  border: 1px solid rgba(51, 200, 232, 0.2);
+  color: var(--defi-orange-primary);
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  width: 100%;
+}
+
+.prof-view-all-comments-btn:hover {
+  background: rgba(51, 200, 232, 0.2);
+  border-color: rgba(51, 200, 232, 0.4);
 }
 
 .prof-view-all-comments {
@@ -1383,6 +1419,17 @@
 
 [data-theme="light"] .prof-comment-item span {
   color: #333333;
+}
+
+[data-theme="light"] .prof-view-all-comments-btn {
+  background: rgba(51, 200, 232, 0.08);
+  border-color: rgba(51, 200, 232, 0.3);
+  color: #33c8e8;
+}
+
+[data-theme="light"] .prof-view-all-comments-btn:hover {
+  background: rgba(51, 200, 232, 0.15);
+  border-color: rgba(51, 200, 232, 0.5);
 }
 
 [data-theme="light"] .prof-no-comments {

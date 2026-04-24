@@ -1,57 +1,140 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sora:wght@400;500;600;700&display=swap');
 
 :root {
-  /* Warm Palette Theme - Dark Mode (Default) */
-  --primary: #E8A88B;
-  --accent: #E8A88B;
-  --bg-dark: #1A1410;
-  --bg-light: #2D2420;
-  --text: #F5E6D3;
-  --text-muted: #C4B5A0;
+  /* ===== 60% Background ===== */
+  --color-bg-primary: #FAFBFC;
+  --color-bg-secondary: #F5F6F8;
+  --color-bg-tertiary: #EEEEF0;
+
+  /* ===== 30% Surface ===== */
+  --color-surface-blue: #E3F2FD;
+  --color-surface-teal: #DFFCF0;
+  --color-surface-lavender: #F3E5F5;
+
+  /* ===== 10% Accent ===== */
+  --color-accent-primary: #52C77A;
+  --color-accent-success: #4CAF50;
+  --color-accent-warning: #FFC107;
+  --color-accent-danger: #FF6B6B;
+  --color-accent-info: #2196F3;
+
+  /* ===== Text ===== */
+  --color-text-primary: #1A1A1A;
+  --color-text-secondary: #6B7280;
+  --color-text-tertiary: #9CA3AF;
+  --color-text-inverse: #FFFFFF;
+
+  /* ===== Borders ===== */
+  --color-border-light: #E5E7EB;
+  --color-border-medium: #D1D5DB;
+  --color-border-dark: #9CA3AF;
+
+  /* ===== Spacing (rem units) ===== */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+
+  /* ===== Border Radius ===== */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+
+  /* ===== Typography ===== */
+  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-size-sm: 12px;
+  --font-size-base: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 18px;
+  --font-size-2xl: 20px;
+
+  /* Legacy aliases mapping to the new colors to maintain compatibility */
+  --primary: var(--color-accent-primary);
+  --accent: var(--color-accent-primary);
+  --bg-dark: var(--color-bg-primary);
+  --bg-light: var(--color-bg-secondary);
+  --text: var(--color-text-primary);
+  --text-muted: var(--color-text-secondary);
 
   /* Mood Colors */
   --mood-calm: #7BA8CC;
-  --mood-focused: #E8A88B;
+  --mood-focused: var(--color-accent-primary);
   --mood-reflective: #A8C9A8;
   --mood-joyful: #F4D89F;
   --mood-energetic: #E8C76A;
 
   /* Legacy vars for compatibility */
-  --scrolla-bg: #1A1410;
-  --scrolla-surface: #2D2420;
-  --scrolla-card: #3D3530;
-  --scrolla-purple: #E8A88B;
-  --scrolla-teal: #E8A88B;
-  --scrolla-coral: #E8A88B;
-  --scrolla-text: #F5E6D3;
-  --scrolla-muted: #C4B5A0;
+  --scrolla-bg: var(--color-bg-primary);
+  --scrolla-surface: var(--color-bg-secondary);
+  --scrolla-card: var(--color-surface-blue);
+  --scrolla-purple: var(--color-accent-primary);
+  --scrolla-teal: var(--color-surface-teal);
+  --scrolla-coral: var(--color-accent-danger);
+  --scrolla-text: var(--color-text-primary);
+  --scrolla-muted: var(--color-text-secondary);
+
+  /* Legacy defi vars mapping */
+  --defi-bg: var(--color-bg-primary);
+  --defi-bg-elevated: var(--color-surface-blue);
+  --defi-surface: var(--color-bg-secondary);
+  --defi-fg: var(--color-text-primary);
+  --defi-muted: var(--color-text-secondary);
+  --defi-orange-primary: var(--color-accent-primary);
+  --defi-gold: var(--color-accent-warning);
+  --defi-border: var(--color-border-medium);
+  --prof-bg: var(--color-bg-primary);
+  --prof-surface: var(--color-surface-blue);
+  --prof-text: var(--color-text-primary);
+  --prof-muted: var(--color-text-secondary);
+  --prof-border: var(--color-border-light);
 }
 
-/* Light Mode Theme */
-[data-theme="light"] {
-  --primary: #E8A88B;
-  --accent: #E8A88B;
-  --bg-dark: #F9F5F0;
-  --bg-light: #F0EDE7;
-  --text: #3D2F28;
-  --text-muted: #8B7D73;
+/* Dark Mode Theme */
+[data-theme="dark"] {
+  --color-bg-primary: #0F1419;
+  --color-bg-secondary: #1A1F2B;
+  --color-bg-tertiary: #252D3D;
 
-  /* Mood Colors */
-  --mood-calm: #7BA8CC;
-  --mood-focused: #E8A88B;
-  --mood-reflective: #A8C9A8;
-  --mood-joyful: #F4D89F;
-  --mood-energetic: #E8C76A;
+  --color-surface-blue: #1E293B;
+  --color-surface-teal: #134E4A;
+  --color-surface-lavender: #4C1D95;
 
-  /* Legacy vars for compatibility */
-  --scrolla-bg: #F9F5F0;
-  --scrolla-surface: #F0EDE7;
-  --scrolla-card: #FFFFFF;
-  --scrolla-purple: #E8A88B;
-  --scrolla-teal: #E8A88B;
-  --scrolla-coral: #E8A88B;
-  --scrolla-text: #3D2F28;
-  --scrolla-muted: #8B7D73;
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: #A0AEC0;
+  --color-text-tertiary: #718096;
+
+  --color-border-light: #374151;
+  --color-border-medium: #4B5563;
+  --color-border-dark: #6B7280;
+
+  /* Mapping for backwards compatibility */
+  --bg-dark: var(--color-bg-primary);
+  --bg-light: var(--color-bg-secondary);
+  --text: var(--color-text-primary);
+  --text-muted: var(--color-text-secondary);
+
+  --scrolla-bg: var(--color-bg-primary);
+  --scrolla-surface: var(--color-bg-secondary);
+  --scrolla-card: var(--color-surface-blue);
+  --scrolla-text: var(--color-text-primary);
+  --scrolla-muted: var(--color-text-secondary);
+
+  /* Legacy defi vars mapping */
+  --defi-bg: var(--color-bg-primary);
+  --defi-bg-elevated: var(--color-surface-blue);
+  --defi-surface: var(--color-bg-secondary);
+  --defi-fg: var(--color-text-primary);
+  --defi-muted: var(--color-text-secondary);
+  --defi-orange-primary: var(--color-accent-primary);
+  --defi-gold: var(--color-accent-warning);
+  --defi-border: var(--color-border-medium);
+  --prof-bg: var(--color-bg-primary);
+  --prof-surface: var(--color-surface-blue);
+  --prof-text: var(--color-text-primary);
+  --prof-muted: var(--color-text-secondary);
+  --prof-border: var(--color-border-light);
 }
 
 @tailwind base;

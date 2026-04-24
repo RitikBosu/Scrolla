@@ -388,18 +388,18 @@ const Feed = () => {
                     <button 
                         className={`feed-mood-item ${selectedMood === 'all' ? 'active' : ''}`}
                         onClick={() => setSelectedMood('all')}
-                        style={{ '--active-color': 'var(--defi-orange-primary)' }}
+                        style={{ '--active-color': '#52C77A' }}
                     >
-                        <div className="feed-mood-dot" style={{ background: 'var(--defi-orange-primary)' }}></div> ✨ All moods
+                        ✨ All moods
                     </button>
                     {MOODS.filter(m => m.id !== 'all').map(mood => (
                         <button 
                             key={mood.id}
                             className={`feed-mood-item ${selectedMood === mood.id ? 'active' : ''}`}
                             onClick={() => setSelectedMood(mood.id)}
-                            style={{ '--active-color': `var(--mood-${mood.id})` }}
+                            style={{ '--active-color': mood.colorCode }}
                         >
-                            <div className="feed-mood-dot" style={{ background: `var(--mood-${mood.id})` }}></div> {mood.emoji} {mood.label}
+                            {mood.emoji} {mood.label}
                         </button>
                     ))}
 

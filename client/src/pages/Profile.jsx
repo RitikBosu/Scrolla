@@ -44,6 +44,7 @@ const Profile = () => {
     const [commentText, setCommentText] = useState('');
     const [liked, setLiked] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
+    const [showAllComments, setShowAllComments] = useState(false);
     const modalRef = useRef(null);
 
     // Followers/Following modal state
@@ -60,8 +61,13 @@ const Profile = () => {
     // Sync tab from URL param when navigating (e.g. ?tab=saved)
     useEffect(() => {
         const tabFromUrl = searchParams.get('tab');
-        if (tabFromUrl) setActiveTab(tabFromUrl);
-    }, [searchParams]);
+        // Prevent non-owners from accessing the mood tab
+        if (tabFromUrl && (tabFromUrl === 'mood' && !isOwnProfile)) {
+            setActiveTab('posts');
+        } else if (tabFromUrl) {
+            setActiveTab(tabFromUrl);
+        }
+    }, [searchParams, isOwnProfile]);
 
     useEffect(() => {
         fetchProfile();
@@ -91,20 +97,33 @@ const Profile = () => {
     }, [expandedPost, currentPostIndex, currentMediaIndex]);
 
     // Modal Navigation Functions
-    const openPostModal = (post) => {
+    const openPostModal = async (post) => {
         const index = posts.findIndex(p => p._id === post._id);
         setCurrentPostIndex(index);
         setExpandedPost(post);
         setCurrentMediaIndex(0);
         setLiked(post.isLiked || false);
         setCommentText('');
+        setShowAllComments(false);
         document.body.style.overflow = 'hidden'; // Prevent background scroll
+        
+        // Fetch fresh comments when opening modal
+        try {
+            const comments = await commentService.getComments(post._id);
+            setExpandedPost(prev => ({
+                ...prev,
+                comments: comments || []
+            }));
+        } catch (error) {
+            console.error('Error fetching comments:', error);
+        }
     };
 
     const closeModal = () => {
         setExpandedPost(null);
         setCurrentPostIndex(null);
         setCommentText('');
+        setShowAllComments(false);
         document.body.style.overflow = 'auto'; // Re-enable background scroll
     };
 
@@ -642,12 +661,14 @@ const Profile = () => {
                     >
                         Journeys
                     </button>
-                    <button 
-                        className={`prof-tab ${activeTab === 'mood' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('mood')}
-                    >
-                        Mood Log
-                    </button>
+                    {isOwnProfile && (
+                        <button 
+                            className={`prof-tab ${activeTab === 'mood' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('mood')}
+                        >
+                            Mood Log
+                        </button>
+                    )}
                 </div>
 
                 {/* Content Grid - Posts, Saved, Journeys */}
@@ -703,9 +724,9 @@ const Profile = () => {
                             ) : (
                                 journeys.map((journey) => (
                                     <div key={journey._id} className="prof-journey-card" style={{
-                                        background: '#2C2B28',
-                                        border: '1px solid #E4A87C',
-                                        borderRadius: '12px',
+                                        background: 'var(--color-surface-blue)',
+                                        border: '1px solid var(--color-border-medium)',
+                                        borderRadius: 'var(--radius-lg)',
                                         padding: '1.5rem',
                                         cursor: 'pointer',
                                         transition: 'all .3s',
@@ -715,16 +736,16 @@ const Profile = () => {
                                         aspectRatio: '1',
                                         overflow: 'hidden'
                                     }}>
-                                        <div style={{ fontSize: '0.85rem', color: '#E4A87C', fontWeight: 600 }}>
+                                        <div style={{ fontSize: '0.85rem', color: 'var(--color-accent-primary)', fontWeight: 600 }}>
                                             {journey.isActive ? '🔴 LIVE' : journey.closedAt ? '✓ ENDED' : '⏰ CLOSED'}
                                         </div>
-                                        <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#F4F1ED', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                        <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--color-text-primary)', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                                             {journey.title}
                                         </h3>
-                                        <p style={{ fontSize: '0.9rem', color: '#A8A5A0', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', flex: 1 }}>
+                                        <p style={{ fontSize: '0.9rem', color: 'var(--color-text-secondary)', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', flex: 1 }}>
                                             {journey.prompt}
                                         </p>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#A8A5A0', marginTop: '0.5rem' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--color-text-secondary)', marginTop: '0.5rem' }}>
                                             <span>👥 {journey.memberCount}</span>
                                             <span>⏱️ {Math.ceil((new Date(journey.deadline) - new Date()) / (1000 * 60 * 60))}h</span>
                                         </div>
@@ -884,17 +905,20 @@ const Profile = () => {
                             <div className="prof-modal-comments">
                                 {expandedPost.comments && expandedPost.comments.length > 0 ? (
                                     <div className="prof-comments-list">
-                                        {expandedPost.comments.slice(0, 5).map((comment, idx) => (
+                                        {expandedPost.comments.slice(0, 3).map((comment, idx) => (
                                             <div key={idx} className="prof-comment-item">
-                                                <strong>{comment.userId?.username || comment.username}</strong>
-                                                <span>{comment.text || comment.content}</span>
+                                                <img 
+                                                    src={comment.author?.avatar || comment.userId?.avatar} 
+                                                    alt="avatar"
+                                                    className="prof-comment-avatar"
+                                                    onError={(e) => { e.target.src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=default'; }}
+                                                />
+                                                <div className="prof-comment-content">
+                                                    <strong>{comment.author?.username || comment.userId?.username || comment.username}</strong>
+                                                    <span>{comment.content || comment.text}</span>
+                                                </div>
                                             </div>
                                         ))}
-                                        {expandedPost.comments.length > 5 && (
-                                            <button className="prof-view-all-comments">
-                                                View all {expandedPost.comments.length} comments
-                                            </button>
-                                        )}
                                     </div>
                                 ) : (
                                     <p className="prof-no-comments">No comments yet</p>
