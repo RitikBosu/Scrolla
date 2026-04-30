@@ -1,0 +1,79 @@
+
+> scrolla-server@1.0.0 test
+> node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --detectOpenHandles
+
+(node:4008) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+PASS __tests__/posts.test.js (5.702 s)
+  ● Console
+
+    console.log
+      ✅ Test Database (in-memory MongoDB) connected
+
+      at Object.<anonymous> (__tests__/setup.js:12:17)
+
+    console.log
+      ✅ Test database cleanup completed
+
+      at Object.<anonymous> (__tests__/setup.js:28:17)
+
+FAIL __tests__/auth.test.js
+  ● Console
+
+    console.log
+      ✅ Test Database (in-memory MongoDB) connected
+
+      at Object.<anonymous> (__tests__/setup.js:12:17)
+
+    console.log
+      ✅ Test database cleanup completed
+
+      at Object.<anonymous> (__tests__/setup.js:28:17)
+
+  ● Authentication - User Model Tests › User Password Security › should allow password comparison
+
+    TypeError: user.matchPassword is not a function
+
+    [0m [90m 130 |[39m             })[33m;[39m
+     [90m 131 |[39m
+    [31m[1m>[22m[39m[90m 132 |[39m             [36mconst[39m isMatch [33m=[39m [36mawait[39m user[33m.[39mmatchPassword([32m'password123'[39m)[33m;[39m
+     [90m     |[39m                                        [31m[1m^[22m[39m
+     [90m 133 |[39m             expect(isMatch)[33m.[39mtoBe([36mtrue[39m)[33m;[39m
+     [90m 134 |[39m         })[33m;[39m
+     [90m 135 |[39m[0m
+
+      at Object.<anonymous> (__tests__/auth.test.js:132:40)
+
+  ● Authentication - User Model Tests › User Password Security › should reject incorrect password
+
+    TypeError: user.matchPassword is not a function
+
+    [0m [90m 141 |[39m             })[33m;[39m
+     [90m 142 |[39m
+    [31m[1m>[22m[39m[90m 143 |[39m             [36mconst[39m isMatch [33m=[39m [36mawait[39m user[33m.[39mmatchPassword([32m'wrongpassword'[39m)[33m;[39m
+     [90m     |[39m                                        [31m[1m^[22m[39m
+     [90m 144 |[39m             expect(isMatch)[33m.[39mtoBe([36mfalse[39m)[33m;[39m
+     [90m 145 |[39m         })[33m;[39m
+     [90m 146 |[39m     })[33m;[39m[0m
+
+      at Object.<anonymous> (__tests__/auth.test.js:143:40)
+
+PASS __tests__/moods.test.js
+  ● Console
+
+    console.log
+      ✅ Test Database (in-memory MongoDB) connected
+
+      at Object.<anonymous> (__tests__/setup.js:12:17)
+
+    console.log
+      ✅ Test database cleanup completed
+
+      at Object.<anonymous> (__tests__/setup.js:28:17)
+
+
+Test Suites: 1 failed, 2 passed, 3 total
+Tests:       2 failed, 48 passed, 50 total
+Snapshots:   0 total
+Time:        11.976 s, estimated 13 s
+Ran all test suites.
