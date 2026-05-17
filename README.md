@@ -221,14 +221,13 @@ This project is licensed under the MIT License.
 
 ## 🌟 Future Enhancements
 
-- Push notifications for journey completion
 - Advanced analytics dashboard
 - AI-powered content recommendations
 - Group discussions and communities
 - Dark mode toggle
 - Progressive Web App (PWA) support
 - Mobile native apps (iOS/Android)
-
+- Cutomized Algorithm
 ---
 
 **Built with ❤️ for mindful social media consumption**
